@@ -3,36 +3,42 @@ Configuration management for FOAM Grant Alignment Engine.
 
 Handles environment-based configuration using Pydantic Settings.
 Supports dev, staging, and production environments.
+
+NOTE: All list-type config fields are stored as comma-separated strings
+because pydantic-settings v2 EnvSettingsSource tries to JSON-parse
+list[str] fields from env vars BEFORE any validator runs, causing
+SettingsError on plain strings. We use str fields with helper methods
+to parse them into lists at runtime.
 """
 
 import json
-from typing import Optional, Any
+from typing import Optional
 from pydantic_settings import BaseSettings
 from pydantic import Field, model_validator
 
 
-def _parse_list_field(v: Any) -> list[str]:
-    """Parse a value that should be a list of strings.
-
-    Handles: JSON arrays, comma-separated strings, or already-parsed lists.
-    """
-    if isinstance(v, list):
-        return v
-    if isinstance(v, str):
-        v = v.strip()
-        # Try JSON parse first (e.g. '["a","b"]')
-        if v.startswith("["):
-            try:
-                return json.loads(v)
-            except (json.JSONDecodeError, ValueError):
-                pass
-        # Fall back to comma-separated
-        return [item.strip() for item in v.split(",") if item.strip()]
-    return v
+def _parse_list(value: str) -> list[str]:
+    """Parse a comma-separated or JSON array string into a list."""
+    value = value.strip()
+    if not value:
+        return []
+    # Try JSON parse first (e.g. '["a","b"]')
+    if value.startswith("["):
+        try:
+            return json.loads(value)
+        except (json.JSONDecodeError, ValueError):
+            pass
+    # Fall back to comma-separated
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 class Settings(BaseSettings):
-    """Application settings with environment-based configuration."""
+    """Application settings with environment-based configuration.
+
+    List-type fields are stored as comma-separated strings to avoid
+    pydantic-settings v2 JSON parsing errors from EnvSettingsSource.
+    Use the corresponding property (e.g. .cors_origins) for the parsed list.
+    """
 
     # Application Metadata
     APP_NAME: str = "FOAM Grant Alignment Engine API"
@@ -56,16 +62,11 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = Field(default=8000, ge=1024, le=65535)
 
-    # CORS Configuration
-    CORS_ORIGINS: list[str] = Field(
-        default=[
-            "http://localhost:3000",
-            "http://localhost:8000",
-        ]
-    )
+    # CORS Configuration — stored as comma-separated strings
+    CORS_ORIGINS: str = Field(default="http://localhost:3000,http://localhost:8000")
     CORS_ALLOW_CREDENTIALS: bool = True
-    CORS_ALLOW_METHODS: list[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
-    CORS_ALLOW_HEADERS: list[str] = ["*"]
+    CORS_ALLOW_METHODS: str = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+    CORS_ALLOW_HEADERS: str = "*"
 
     # JWT Configuration
     JWT_SECRET_KEY: str = Field(default="your-secret-key-change-in-production")
@@ -76,7 +77,7 @@ class Settings(BaseSettings):
     # File Upload Configuration
     UPLOAD_DIR: str = "/tmp/foam_uploads"
     UPLOAD_MAX_FILE_SIZE: int = Field(default=50 * 1024 * 1024, description="Max file size in bytes (50MB)")
-    ALLOWED_FILE_TYPES: list[str] = [".pdf", ".docx", ".doc", ".txt"]
+    ALLOWED_FILE_TYPES: str = ".pdf,.docx,.doc,.txt"
 
     # AI/ML Configuration
     OPENAI_API_KEY: Optional[str] = None
@@ -117,12 +118,7 @@ class Settings(BaseSettings):
     # FOAM Program Configuration
     FOAM_ANNUAL_TARGET_FATHERS: int = 140
     FOAM_ANNUAL_TARGET_CHILDREN: int = 210
-    FOAM_PROGRAMS: list[str] = [
-        "Project Family Build",
-        "Responsible Fatherhood Classes",
-        "Celebration of Fatherhood Events",
-        "Louisiana Barracks Program"
-    ]
+    FOAM_PROGRAMS: str = "Project Family Build,Responsible Fatherhood Classes,Celebration of Fatherhood Events,Louisiana Barracks Program"
 
     # Data System Integration
     EMPOWERDB_ENABLED: bool = False
@@ -138,33 +134,44 @@ class Settings(BaseSettings):
 
     @model_validator(mode="before")
     @classmethod
-    def pre_process_list_fields(cls, values: dict) -> dict:
-        """Pre-process list fields from environment variable strings.
-
-        pydantic-settings parses env vars before field validators run,
-        so we must use model_validator(mode='before') to handle
-        comma-separated strings for list fields.
-        """
-        list_fields = [
-            "CORS_ORIGINS",
-            "CORS_ALLOW_METHODS",
-            "CORS_ALLOW_HEADERS",
-            "ALLOWED_FILE_TYPES",
-            "FOAM_PROGRAMS",
-        ]
-        for field_name in list_fields:
-            if field_name in values and isinstance(values[field_name], str):
-                values[field_name] = _parse_list_field(values[field_name])
-
-        # Fix DATABASE_URL: convert postgres:// to postgresql+asyncpg://
+    def fix_database_url(cls, values: dict) -> dict:
+        """Convert postgres:// to postgresql+asyncpg:// for async driver."""
         db_url = values.get("DATABASE_URL", "")
         if isinstance(db_url, str):
             if db_url.startswith("postgres://"):
                 values["DATABASE_URL"] = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
             elif db_url.startswith("postgresql://") and "asyncpg" not in db_url:
                 values["DATABASE_URL"] = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-
         return values
+
+    # --- Parsed list properties ---
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Parse CORS_ORIGINS into a list."""
+        return _parse_list(self.CORS_ORIGINS)
+
+    @property
+    def cors_allow_methods(self) -> list[str]:
+        """Parse CORS_ALLOW_METHODS into a list."""
+        return _parse_list(self.CORS_ALLOW_METHODS)
+
+    @property
+    def cors_allow_headers(self) -> list[str]:
+        """Parse CORS_ALLOW_HEADERS into a list."""
+        return _parse_list(self.CORS_ALLOW_HEADERS)
+
+    @property
+    def allowed_file_types(self) -> list[str]:
+        """Parse ALLOWED_FILE_TYPES into a list."""
+        return _parse_list(self.ALLOWED_FILE_TYPES)
+
+    @property
+    def foam_programs(self) -> list[str]:
+        """Parse FOAM_PROGRAMS into a list."""
+        return _parse_list(self.FOAM_PROGRAMS)
+
+    # --- Convenience methods ---
 
     def is_production(self) -> bool:
         """Check if running in production."""

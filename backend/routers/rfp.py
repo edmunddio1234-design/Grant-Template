@@ -75,7 +75,7 @@ def get_allowed_extension(filename: str) -> Optional[str]:
         return None
 
     ext = "." + filename.rsplit(".", 1)[1].lower()
-    if ext in settings.ALLOWED_FILE_TYPES:
+    if ext in settings.allowed_file_types:
         return ext
     return None
 
@@ -136,7 +136,7 @@ async def upload_rfp(
             logger.warning(f"Invalid file type: {file.filename}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"File type not allowed. Allowed types: {', '.join(settings.ALLOWED_FILE_TYPES)}",
+                detail=f"File type not allowed. Allowed types: {', '.join(settings.allowed_file_types)}",
             )
 
         # Check file size
