@@ -36,21 +36,32 @@ class DatabaseManager:
     async def initialize(self) -> None:
         """Initialize the database engine and session factory."""
         try:
-            self._engine = create_async_engine(
-                settings.DATABASE_URL,
-                echo=settings.DATABASE_ECHO,
-                poolclass=pool.NullPool if settings.ENVIRONMENT == "development" else pool.QueuePool,
-                pool_size=settings.DATABASE_POOL_SIZE,
-                max_overflow=settings.DATABASE_MAX_OVERFLOW,
-                pool_recycle=settings.DATABASE_POOL_RECYCLE,
-                pool_pre_ping=True,
-                connect_args={
+            # Determine pooling strategy based on environment
+            use_null_pool = settings.ENVIRONMENT == "development"
+            
+            # Build engine kwargs - only include pool_size and max_overflow for QueuePool
+            engine_kwargs = {
+                "echo": settings.DATABASE_ECHO,
+                "poolclass": pool.NullPool if use_null_pool else pool.QueuePool,
+                "pool_recycle": settings.DATABASE_POOL_RECYCLE,
+                "pool_pre_ping": True,
+                "connect_args": {
                     "timeout": 10,
                     "server_settings": {
                         "application_name": "foam_grant_engine",
                         "jit": "off",
                     }
                 }
+            }
+            
+            # Only add pool_size and max_overflow for QueuePool (not for NullPool)
+            if not use_null_pool:
+                engine_kwargs["pool_size"] = settings.DATABASE_POOL_SIZE
+                engine_kwargs["max_overflow"] = settings.DATABASE_MAX_OVERFLOW
+            
+            self._engine = create_async_engine(
+                settings.DATABASE_URL,
+                **engine_kwargs
             )
 
             self._session_factory = async_sessionmaker(
