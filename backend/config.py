@@ -5,9 +5,30 @@ Handles environment-based configuration using Pydantic Settings.
 Supports dev, staging, and production environments.
 """
 
-from typing import Optional
+import json
+from typing import Optional, Any
 from pydantic_settings import BaseSettings
-from pydantic import Field, field_validator
+from pydantic import Field, model_validator
+
+
+def _parse_list_field(v: Any) -> list[str]:
+    """Parse a value that should be a list of strings.
+
+    Handles: JSON arrays, comma-separated strings, or already-parsed lists.
+    """
+    if isinstance(v, list):
+        return v
+    if isinstance(v, str):
+        v = v.strip()
+        # Try JSON parse first (e.g. '["a","b"]')
+        if v.startswith("["):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, ValueError):
+                pass
+        # Fall back to comma-separated
+        return [item.strip() for item in v.split(",") if item.strip()]
+    return v
 
 
 class Settings(BaseSettings):
@@ -17,7 +38,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "FOAM Grant Alignment Engine API"
     APP_VERSION: str = "1.0.0"
     APP_DESCRIPTION: str = "AI-powered grant alignment and compliance analysis for Fathers On A Mission"
-    ENVIRONMENT: str = Field(default="development", pattern="^(development|staging|production)$")
+    ENVIRONMENT: str = Field(default="development")
     DEBUG: bool = Field(default=True)
 
     # Database Configuration
@@ -83,7 +104,7 @@ class Settings(BaseSettings):
     AWS_S3_REGION: str = "us-east-1"
 
     # Logging Configuration
-    LOG_LEVEL: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
+    LOG_LEVEL: str = Field(default="INFO")
     LOG_FORMAT: str = "json"  # json or text
 
     # FOAM Organization Data
@@ -109,67 +130,41 @@ class Settings(BaseSettings):
     NFORM_ENABLED: bool = False
     NFORM_API_URL: Optional[str] = None
 
-    class Config:
-        """Pydantic configuration."""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+    }
 
-    @field_validator("CORS_ORIGINS", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        """Parse CORS origins from string or list.
-        
-        Handles comma-separated strings from environment variables
-        and converts them to a list of URLs.
+    def pre_process_list_fields(cls, values: dict) -> dict:
+        """Pre-process list fields from environment variable strings.
+
+        pydantic-settings parses env vars before field validators run,
+        so we must use model_validator(mode='before') to handle
+        comma-separated strings for list fields.
         """
-        if isinstance(v, str):
-            # Split by comma and strip whitespace from each origin
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+        list_fields = [
+            "CORS_ORIGINS",
+            "CORS_ALLOW_METHODS",
+            "CORS_ALLOW_HEADERS",
+            "ALLOWED_FILE_TYPES",
+            "FOAM_PROGRAMS",
+        ]
+        for field_name in list_fields:
+            if field_name in values and isinstance(values[field_name], str):
+                values[field_name] = _parse_list_field(values[field_name])
 
-    @field_validator("CORS_ALLOW_METHODS", mode="before")
-    @classmethod
-    def parse_cors_methods(cls, v: str | list[str]) -> list[str]:
-        """Parse CORS methods from string or list."""
-        if isinstance(v, str):
-            return [method.strip() for method in v.split(",") if method.strip()]
-        return v
+        # Fix DATABASE_URL: convert postgres:// to postgresql+asyncpg://
+        db_url = values.get("DATABASE_URL", "")
+        if isinstance(db_url, str):
+            if db_url.startswith("postgres://"):
+                values["DATABASE_URL"] = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif db_url.startswith("postgresql://") and "asyncpg" not in db_url:
+                values["DATABASE_URL"] = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-    @field_validator("CORS_ALLOW_HEADERS", mode="before")
-    @classmethod
-    def parse_cors_headers(cls, v: str | list[str]) -> list[str]:
-        """Parse CORS headers from string or list."""
-        if isinstance(v, str):
-            return [header.strip() for header in v.split(",") if header.strip()]
-        return v
-
-    @field_validator("ALLOWED_FILE_TYPES", mode="before")
-    @classmethod
-    def parse_allowed_file_types(cls, v: str | list[str]) -> list[str]:
-        """Parse allowed file types from string or list."""
-        if isinstance(v, str):
-            return [ftype.strip() for ftype in v.split(",") if ftype.strip()]
-        return v
-
-    @field_validator("FOAM_PROGRAMS", mode="before")
-    @classmethod
-    def parse_foam_programs(cls, v: str | list[str]) -> list[str]:
-        """Parse FOAM programs from string or list."""
-        if isinstance(v, str):
-            return [program.strip() for program in v.split(",") if program.strip()]
-        return v
-
-    @field_validator("DATABASE_URL")
-    @classmethod
-    def validate_database_url(cls, v: str) -> str:
-        """Ensure async PostgreSQL driver is used. Auto-converts Render-style URLs."""
-        # Render provides postgres:// but asyncpg needs postgresql+asyncpg://
-        if v.startswith("postgres://"):
-            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
-        elif v.startswith("postgresql://") and "asyncpg" not in v:
-            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
-        return v
+        return values
 
     def is_production(self) -> bool:
         """Check if running in production."""
