@@ -126,9 +126,12 @@ class Settings(BaseSettings):
     @validator("DATABASE_URL")
     @classmethod
     def validate_database_url(cls, v: str, values: dict) -> str:
-        """Ensure async PostgreSQL driver is used."""
-        if "postgresql" in v and "asyncpg" not in v:
-            raise ValueError("DATABASE_URL must use asyncpg driver: postgresql+asyncpg://...")
+        """Ensure async PostgreSQL driver is used. Auto-converts Render-style URLs."""
+        # Render provides postgres:// but asyncpg needs postgresql+asyncpg://
+        if v.startswith("postgres://"):
+            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif v.startswith("postgresql://") and "asyncpg" not in v:
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
 
     def is_production(self) -> bool:

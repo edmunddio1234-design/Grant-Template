@@ -20,6 +20,9 @@ from config import settings
 from database import db_manager, init_db, close_db
 import schemas
 
+# Import routers
+from routers import boilerplate, rfp, crosswalk, plans, dashboard, ai_draft
+
 # Configure logging
 logging.basicConfig(
     level=settings.LOG_LEVEL,
@@ -91,7 +94,7 @@ def create_app() -> FastAPI:
     if settings.is_production():
         app.add_middleware(
             TrustedHostMiddleware,
-            allowed_hosts=["*.foamgrants.org"],
+            allowed_hosts=["*.foamgrants.org", "*.onrender.com"],
         )
 
     # Setup upload directory
@@ -108,6 +111,14 @@ def create_app() -> FastAPI:
         logger.info(f"Mounted uploads directory: {upload_path}")
     except Exception as e:
         logger.warning(f"Could not mount uploads directory: {e}")
+
+    # Include all module routers
+    app.include_router(boilerplate.router)
+    app.include_router(rfp.router)
+    app.include_router(crosswalk.router)
+    app.include_router(plans.router)
+    app.include_router(dashboard.router)
+    app.include_router(ai_draft.router)
 
     return app
 
@@ -180,7 +191,7 @@ async def health_check() -> schemas.HealthCheckResponse:
         status="healthy" if db_status == "healthy" else "degraded",
         timestamp=datetime.now(timezone.utc),
         database=db_status,
-        redis="unknown",  # Would need Redis client to check
+        redis="unknown",
         version=settings.APP_VERSION,
     )
 
@@ -209,7 +220,7 @@ async def root():
 
 
 # ============================================================================
-# API V1 ROUTES
+# API V1 STATUS
 # ============================================================================
 
 @app.get(
@@ -231,58 +242,6 @@ async def api_status():
         "environment": settings.ENVIRONMENT,
         "debug": settings.DEBUG,
     }
-
-
-# ============================================================================
-# PLACEHOLDER ENDPOINT GROUPS (To be implemented in separate routers)
-# ============================================================================
-
-@app.get(f"{settings.API_PREFIX}/boilerplate/categories", tags=["Boilerplate"])
-async def list_boilerplate_categories():
-    """List all boilerplate categories. Implementation in separate router."""
-    return {"message": "Implement in boilerplate router"}
-
-
-@app.get(f"{settings.API_PREFIX}/rfps", tags=["RFP"])
-async def list_rfps():
-    """List all RFPs. Implementation in separate router."""
-    return {"message": "Implement in rfp router"}
-
-
-@app.post(f"{settings.API_PREFIX}/rfps/upload", tags=["RFP"])
-async def upload_rfp():
-    """Upload new RFP. Implementation in separate router."""
-    return {"message": "Implement in rfp router"}
-
-
-@app.get(f"{settings.API_PREFIX}/crosswalks", tags=["Alignment"])
-async def list_crosswalks():
-    """List crosswalk maps. Implementation in separate router."""
-    return {"message": "Implement in crosswalk router"}
-
-
-@app.get(f"{settings.API_PREFIX}/grant-plans", tags=["Grant Planning"])
-async def list_grant_plans():
-    """List grant plans. Implementation in separate router."""
-    return {"message": "Implement in grant_plan router"}
-
-
-@app.get(f"{settings.API_PREFIX}/gap-analyses", tags=["Gap Analysis"])
-async def list_gap_analyses():
-    """List gap analyses. Implementation in separate router."""
-    return {"message": "Implement in gap_analysis router"}
-
-
-@app.get(f"{settings.API_PREFIX}/users", tags=["Users"])
-async def list_users():
-    """List users. Implementation in separate router."""
-    return {"message": "Implement in user router"}
-
-
-@app.get(f"{settings.API_PREFIX}/dashboard/summary", tags=["Dashboard"])
-async def get_dashboard_summary():
-    """Get dashboard summary. Implementation in separate router."""
-    return {"message": "Implement in dashboard router"}
 
 
 # ============================================================================
@@ -317,58 +276,6 @@ async def log_requests(request: Request, call_next):
         )
 
     return response
-
-
-# ============================================================================
-# STARTUP/SHUTDOWN MESSAGES
-# ============================================================================
-
-@app.on_event("startup")
-async def startup_message():
-    """Log startup information."""
-    logger.info("=" * 80)
-    logger.info(f"Starting {settings.APP_NAME}")
-    logger.info(f"Version: {settings.APP_VERSION}")
-    logger.info(f"Environment: {settings.ENVIRONMENT}")
-    logger.info(f"Debug Mode: {settings.DEBUG}")
-    logger.info(f"API Prefix: {settings.API_PREFIX}")
-    logger.info(f"CORS Origins: {settings.CORS_ORIGINS}")
-    logger.info("=" * 80)
-
-
-@app.on_event("shutdown")
-async def shutdown_message():
-    """Log shutdown information."""
-    logger.info("=" * 80)
-    logger.info(f"Shutting down {settings.APP_NAME}")
-    logger.info("=" * 80)
-
-
-# ============================================================================
-# ROUTER IMPORTS (To be added as routers are created)
-# ============================================================================
-
-"""
-Future router inclusions:
-
-from routers import (
-    boilerplate_router,
-    rfp_router,
-    crosswalk_router,
-    grant_plan_router,
-    gap_analysis_router,
-    user_router,
-    dashboard_router,
-)
-
-app.include_router(boilerplate_router.router, prefix=settings.API_PREFIX, tags=["Boilerplate"])
-app.include_router(rfp_router.router, prefix=settings.API_PREFIX, tags=["RFP"])
-app.include_router(crosswalk_router.router, prefix=settings.API_PREFIX, tags=["Alignment"])
-app.include_router(grant_plan_router.router, prefix=settings.API_PREFIX, tags=["Grant Planning"])
-app.include_router(gap_analysis_router.router, prefix=settings.API_PREFIX, tags=["Gap Analysis"])
-app.include_router(user_router.router, prefix=settings.API_PREFIX, tags=["Users"])
-app.include_router(dashboard_router.router, prefix=settings.API_PREFIX, tags=["Dashboard"])
-"""
 
 
 if __name__ == "__main__":

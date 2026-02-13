@@ -1,0 +1,39 @@
+# Render Blueprint for FOAM Grant Alignment Engine
+# Deploy with: Connect GitHub repo on Render Dashboard
+
+databases:
+  - name: foam-grant-db
+    plan: free
+    databaseName: foam_grant_engine
+    user: foam_admin
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: foam-grant-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: foam-grant-db
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: UPLOAD_DIR
+        value: /tmp/foam_uploads
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DEBUG
+        value: "false"
