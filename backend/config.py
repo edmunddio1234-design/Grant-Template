@@ -7,7 +7,7 @@ Supports dev, staging, and production environments.
 
 from typing import Optional
 from pydantic_settings import BaseSettings
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 
 
 class Settings(BaseSettings):
@@ -115,17 +115,54 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
         case_sensitive = True
 
-    @validator("CORS_ORIGINS", pre=True)
+    @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        """Parse CORS origins from string or list."""
+        """Parse CORS origins from string or list.
+        
+        Handles comma-separated strings from environment variables
+        and converts them to a list of URLs.
+        """
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
+            # Split by comma and strip whitespace from each origin
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
 
-    @validator("DATABASE_URL")
+    @field_validator("CORS_ALLOW_METHODS", mode="before")
     @classmethod
-    def validate_database_url(cls, v: str, values: dict) -> str:
+    def parse_cors_methods(cls, v: str | list[str]) -> list[str]:
+        """Parse CORS methods from string or list."""
+        if isinstance(v, str):
+            return [method.strip() for method in v.split(",") if method.strip()]
+        return v
+
+    @field_validator("CORS_ALLOW_HEADERS", mode="before")
+    @classmethod
+    def parse_cors_headers(cls, v: str | list[str]) -> list[str]:
+        """Parse CORS headers from string or list."""
+        if isinstance(v, str):
+            return [header.strip() for header in v.split(",") if header.strip()]
+        return v
+
+    @field_validator("ALLOWED_FILE_TYPES", mode="before")
+    @classmethod
+    def parse_allowed_file_types(cls, v: str | list[str]) -> list[str]:
+        """Parse allowed file types from string or list."""
+        if isinstance(v, str):
+            return [ftype.strip() for ftype in v.split(",") if ftype.strip()]
+        return v
+
+    @field_validator("FOAM_PROGRAMS", mode="before")
+    @classmethod
+    def parse_foam_programs(cls, v: str | list[str]) -> list[str]:
+        """Parse FOAM programs from string or list."""
+        if isinstance(v, str):
+            return [program.strip() for program in v.split(",") if program.strip()]
+        return v
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
         """Ensure async PostgreSQL driver is used. Auto-converts Render-style URLs."""
         # Render provides postgres:// but asyncpg needs postgresql+asyncpg://
         if v.startswith("postgres://"):
