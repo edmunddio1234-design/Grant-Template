@@ -1,0 +1,146 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: foam_postgres
+    environment:
+      POSTGRES_USER: foam_user
+      POSTGRES_PASSWORD: foam_password
+      POSTGRES_DB: foam_grants
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foam_user -d foam_grants"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - foam_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: foam_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - foam_network
+
+  # FastAPI Application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: foam_api
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "true"
+      DATABASE_URL: postgresql+asyncpg://foam_user:foam_password@postgres:5432/foam_grants
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      JWT_SECRET_KEY: dev-secret-key-change-in-production
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - foam_network
+
+  # pgAdmin - Database Management UI (Optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: foam_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - foam_network
+
+  # Celery Worker (Optional - for async tasks)
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: foam_celery
+    command: celery -A celery_app worker --loglevel=info
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "true"
+      DATABASE_URL: postgresql+asyncpg://foam_user:foam_password@postgres:5432/foam_grants
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - foam_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  foam_network:
+    driver: bridge
+
+# Service information:
+# postgres   - PostgreSQL database (port 5432)
+# redis      - Redis cache (port 6379)
+# api        - FastAPI application (port 8000)
+# pgadmin    - Database admin UI (port 5050)
+# celery     - Async task worker
+#
+# Database credentials:
+#   User: foam_user
+#   Password: foam_password
+#   Database: foam_grants
+#
+# pgAdmin credentials:
+#   Email: admin@example.com
+#   Password: admin
+#
+# Usage:
+#   docker-compose up -d           # Start all services
+#   docker-compose logs -f api     # View API logs
+#   docker-compose exec api bash   # Enter API container
+#   docker-compose down            # Stop all services
+#   docker-compose down -v         # Stop and remove volumes
