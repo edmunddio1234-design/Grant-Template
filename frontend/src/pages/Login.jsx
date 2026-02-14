@@ -116,7 +116,7 @@ export default function Login() {
               Don't have an account? Create one
             </Link>
             <p className="text-xs text-gray-400">
-              Fathers On A Mission (FOAM) Grant Management System
+              FOAM Grant Management System
             </p>
           </div>
         </div>

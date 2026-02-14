@@ -186,4 +186,4 @@ All components accept props for customization and follow consistent styling patt
 
 ## License
 
-© 2024 Fathers On A Mission. All rights reserved.
+© 2024 FOAM. All rights reserved.

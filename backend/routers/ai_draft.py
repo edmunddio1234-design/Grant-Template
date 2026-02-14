@@ -910,7 +910,7 @@ def _fill_placeholder_framework(section_framework, section, include_outlines, in
     section_framework["customization_notes"] = [
         "Tailor to Project Family Build's specific context",
         "Add organization-specific data and outcomes",
-        "Include references to Fathers On A Mission's mission",
+        "Include references to FOAM's mission",
     ]
     section_framework["source"] = "placeholder"
 

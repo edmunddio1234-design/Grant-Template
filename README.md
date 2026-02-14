@@ -1,6 +1,6 @@
 # Grant Alignment Engine (GAE)
 
-A structured grant preparation application for **Fathers On A Mission (FOAM)** that analyzes uploaded RFPs, maps funder requirements against FOAM's institutional capabilities, and produces compliance-aligned grant frameworks.
+A structured grant preparation application for **FOAM** that analyzes uploaded RFPs, maps funder requirements against FOAM's institutional capabilities, and produces compliance-aligned grant frameworks.
 
 This is not a writing assistant. This is a **grant alignment and structuring engine**.
 
@@ -158,4 +158,4 @@ Full interactive docs at `/docs` when running.
 
 ## License
 
-Private — Fathers On A Mission (FOAM)
+Private — FOAM

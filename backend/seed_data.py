@@ -173,7 +173,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 {
                     "title": "Organizational Mission & History",
                     "content": """
-                    Fathers On A Mission (FOAM) is a 501(c)(3) nonprofit organization established in 2017,
+                    FOAM is a 501(c)(3) nonprofit organization established in 2017,
                     dedicated to strengthening families and communities by empowering fathers to be actively
                     engaged parents and positive role models. Located in East Baton Rouge Parish, Louisiana,
                     FOAM serves 140 fathers and approximately 210 children annually through evidence-based

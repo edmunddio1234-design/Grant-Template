@@ -1,6 +1,6 @@
 # Grant Alignment Engine - Backend API
 
-A production-quality FastAPI backend for the Grant Alignment Engine, providing AI-powered grant alignment and compliance analysis for Fathers On A Mission.
+A production-quality FastAPI backend for the Grant Alignment Engine, providing AI-powered grant alignment and compliance analysis for FOAM.
 
 ## Overview
 
@@ -402,7 +402,7 @@ All API responses follow a consistent format:
 
 ## FOAM Organization Info
 
-**Organization**: Fathers On A Mission (501(c)(3))
+**Organization**: FOAM (501(c)(3))
 **Location**: East Baton Rouge Parish, Louisiana
 **Founded**: 2017
 **EIN**: 82-2374110
@@ -425,7 +425,7 @@ All API responses follow a consistent format:
 
 ## License
 
-Copyright Fathers On A Mission. All rights reserved.
+Copyright FOAM. All rights reserved.
 
 ## Contact
 

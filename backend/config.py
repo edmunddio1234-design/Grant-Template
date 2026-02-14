@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     # Application Metadata
     APP_NAME: str = "Grant Alignment Engine API"
     APP_VERSION: str = "1.0.0"
-    APP_DESCRIPTION: str = "AI-powered grant alignment and compliance analysis for Fathers On A Mission"
+    APP_DESCRIPTION: str = "AI-powered grant alignment and compliance analysis for FOAM"
     ENVIRONMENT: str = Field(default="development")
     DEBUG: bool = Field(default=True)
 
@@ -109,7 +109,7 @@ class Settings(BaseSettings):
     LOG_FORMAT: str = "json"  # json or text
 
     # FOAM Organization Data
-    ORGANIZATION_NAME: str = "Fathers On A Mission"
+    ORGANIZATION_NAME: str = "FOAM"
     ORGANIZATION_EIN: str = "82-2374110"
     ORGANIZATION_501C3: bool = True
     ORGANIZATION_FOUNDED: int = 2017
