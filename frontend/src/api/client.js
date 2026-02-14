@@ -150,6 +150,8 @@ export const apiClient = {
 
   getDashboardSummary: () => client.get('/dashboard/summary'),
 
+  getFunderBreakdown: () => client.get('/dashboard/summary/funder-breakdown'),
+
   getGapAnalysis: (rfpId) => client.get(`/dashboard/${rfpId}/gaps`),
 
   getRiskDistribution: (rfpId) => client.get(`/dashboard/${rfpId}/risks`),

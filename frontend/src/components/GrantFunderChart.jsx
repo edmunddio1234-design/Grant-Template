@@ -1,20 +1,32 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Award, Clock, XCircle, ChevronDown, ChevronUp, BarChart3, TrendingUp, Zap } from 'lucide-react'
+import { Award, Clock, XCircle, ChevronDown, ChevronUp, BarChart3, TrendingUp, Zap, Loader2 } from 'lucide-react'
+import { apiClient } from '../api/client'
 
-// Grant/Funder data
-const grantFunderData = [
-  { name: 'Federal Grants', awarded: 285000, pending: 150000, denied: 45000, category: 'Government', gradient: 'from-blue-500 to-indigo-600', color: '#3B82F6', accent: '#818CF8' },
-  { name: 'State LCTF', awarded: 125000, pending: 75000, denied: 20000, category: 'Government', gradient: 'from-violet-500 to-purple-600', color: '#8B5CF6', accent: '#A78BFA' },
-  { name: 'Corporate Sponsors', awarded: 180000, pending: 95000, denied: 30000, category: 'Corporate', gradient: 'from-emerald-400 to-teal-600', color: '#10B981', accent: '#14B8A6' },
-  { name: 'Foundation Grants', awarded: 92000, pending: 55000, denied: 15000, category: 'Foundation', gradient: 'from-amber-400 to-orange-500', color: '#F59E0B', accent: '#F97316' },
-  { name: 'Community Fund', awarded: 37750, pending: 28000, denied: 8000, category: 'Community', gradient: 'from-pink-500 to-rose-600', color: '#EC4899', accent: '#F43F5E' },
-  { name: 'United Way', awarded: 65000, pending: 40000, denied: 12000, category: 'Nonprofit', gradient: 'from-cyan-400 to-blue-500', color: '#06B6D4', accent: '#3B82F6' },
-]
+// Color palette for funder categories
+const CATEGORY_STYLES = {
+  federal:    { gradient: 'from-blue-500 to-indigo-600', color: '#3B82F6', accent: '#818CF8' },
+  state:      { gradient: 'from-violet-500 to-purple-600', color: '#8B5CF6', accent: '#A78BFA' },
+  government: { gradient: 'from-blue-500 to-indigo-600', color: '#3B82F6', accent: '#818CF8' },
+  corporate:  { gradient: 'from-emerald-400 to-teal-600', color: '#10B981', accent: '#14B8A6' },
+  foundation: { gradient: 'from-amber-400 to-orange-500', color: '#F59E0B', accent: '#F97316' },
+  community:  { gradient: 'from-pink-500 to-rose-600', color: '#EC4899', accent: '#F43F5E' },
+  nonprofit:  { gradient: 'from-cyan-400 to-blue-500', color: '#06B6D4', accent: '#3B82F6' },
+  other:      { gradient: 'from-gray-400 to-slate-500', color: '#64748B', accent: '#94A3B8' },
+}
+const STYLE_LIST = Object.values(CATEGORY_STYLES)
 
-const totalAwarded = grantFunderData.reduce((s, d) => s + d.awarded, 0)
-const totalPending = grantFunderData.reduce((s, d) => s + d.pending, 0)
-const totalDenied = grantFunderData.reduce((s, d) => s + d.denied, 0)
-const grandTotal = totalAwarded + totalPending + totalDenied
+function getStyleForCategory(cat, idx) {
+  const key = (cat || 'other').toLowerCase()
+  return CATEGORY_STYLES[key] || STYLE_LIST[idx % STYLE_LIST.length]
+}
+
+// Enrich raw funder data with visual properties
+function enrichFunders(raw) {
+  return raw.map((d, i) => ({
+    ...d,
+    ...getStyleForCategory(d.category, i),
+  }))
+}
 
 function fmt(val) {
   if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`
@@ -25,9 +37,10 @@ function fmt(val) {
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3) }
 
 // Animated gradient blobs floating in background
-function GradientBlobs() {
-  const blobs = useRef(
-    grantFunderData.map((d, i) => ({
+function GradientBlobs({ data }) {
+  const blobs = useRef(null)
+  if (!blobs.current && data.length > 0) {
+    blobs.current = data.map((d, i) => ({
       id: i,
       x: 10 + (i % 3) * 35 + Math.random() * 10,
       y: 15 + Math.floor(i / 3) * 50 + Math.random() * 15,
@@ -36,11 +49,12 @@ function GradientBlobs() {
       delay: i * 0.8,
       color: d.color,
     }))
-  ).current
+  }
+  const items = blobs.current || []
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {blobs.map(b => (
+      {items.map(b => (
         <div
           key={b.id}
           className="absolute rounded-full blur-3xl"
@@ -182,12 +196,72 @@ function WaveBars({ data }) {
 export default function GrantFunderChart() {
   const [mode, setMode] = useState('background')
   const [hoveredFunder, setHoveredFunder] = useState(null)
+  const [grantFunderData, setGrantFunderData] = useState([])
+  const [totals, setTotals] = useState({ awarded: 0, pending: 0, denied: 0, grand: 0 })
+  const [loading, setLoading] = useState(true)
+  const [dataSource, setDataSource] = useState('loading') // 'api' | 'loading'
 
-  const handleClick = useCallback(() => {
-    setMode(prev => prev === 'background' ? 'static' : prev === 'static' ? 'expanded' : 'background')
+  // Fetch live data from backend
+  useEffect(() => {
+    let cancelled = false
+    async function fetchFunderData() {
+      try {
+        const res = await apiClient.getFunderBreakdown()
+        if (cancelled) return
+        const { funders, summary } = res.data
+        if (funders && funders.length > 0) {
+          setGrantFunderData(enrichFunders(funders))
+          setTotals({
+            awarded: summary.total_awarded,
+            pending: summary.total_pending,
+            denied: summary.total_denied,
+            grand: summary.total_pipeline,
+          })
+          setDataSource('api')
+        } else {
+          // API returned empty — no grants yet
+          setGrantFunderData([])
+          setTotals({ awarded: 0, pending: 0, denied: 0, grand: 0 })
+          setDataSource('api')
+        }
+      } catch (err) {
+        if (cancelled) return
+        console.log('Funder breakdown API unavailable:', err.message)
+        // No fallback mock data — show empty state
+        setGrantFunderData([])
+        setTotals({ awarded: 0, pending: 0, denied: 0, grand: 0 })
+        setDataSource('api')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    fetchFunderData()
+    return () => { cancelled = true }
   }, [])
 
+  const totalAwarded = totals.awarded
+  const totalPending = totals.pending
+  const totalDenied = totals.denied
+  const grandTotal = totals.grand
+
+  const handleClick = useCallback(() => {
+    if (loading) return
+    setMode(prev => prev === 'background' ? 'static' : prev === 'static' ? 'expanded' : 'background')
+  }, [loading])
+
   const modeLabel = mode === 'background' ? 'Click to focus' : mode === 'static' ? 'Click to expand details' : 'Click to minimize'
+
+  // Empty state
+  if (!loading && grantFunderData.length === 0) {
+    return (
+      <div className="relative w-full overflow-hidden rounded-2xl border border-gray-100 shadow-sm bg-white p-8 text-center">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-t-2xl" />
+        <BarChart3 size={32} className="mx-auto text-gray-300 mb-3" />
+        <h3 className="text-lg font-bold text-gray-700 mb-1">Grant Funder Analytics</h3>
+        <p className="text-sm text-gray-400">Upload RFPs with funder information to see live grant pipeline metrics here.</p>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -223,6 +297,14 @@ export default function GrantFunderChart() {
         }
       `}</style>
 
+      {loading && (
+        <div className="relative w-full overflow-hidden rounded-2xl border border-gray-100 shadow-sm bg-white p-12 text-center">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-t-2xl" />
+          <Loader2 size={28} className="mx-auto text-blue-500 animate-spin mb-3" />
+          <p className="text-sm text-gray-400 font-medium">Loading grant funder data...</p>
+        </div>
+      )}
+      {!loading && (
       <div
         onClick={handleClick}
         className={`
@@ -233,7 +315,7 @@ export default function GrantFunderChart() {
         style={{ background: '#ffffff' }}
       >
         {/* Gradient blobs always visible */}
-        <GradientBlobs />
+        <GradientBlobs data={grantFunderData} />
 
         {/* Subtle top gradient accent */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-t-2xl" />
@@ -516,6 +598,7 @@ export default function GrantFunderChart() {
           </div>
         )}
       </div>
+      )}
     </>
   )
 }

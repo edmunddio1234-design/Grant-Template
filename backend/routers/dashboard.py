@@ -245,6 +245,88 @@ async def get_dashboard_summary(
 
 
 # ============================================================================
+# FUNDER BREAKDOWN ENDPOINT
+# ============================================================================
+
+
+@router.get(
+    "/summary/funder-breakdown",
+    response_model=Dict[str, Any],
+    summary="Get grant metrics aggregated by funder",
+    status_code=status.HTTP_200_OK,
+)
+async def get_funder_breakdown(
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Get grant funder metrics aggregated by funding type and funder name.
+
+    Returns awarded, pending, and denied totals grouped by funder,
+    used by the Grant Funder Analytics chart on the dashboard.
+    """
+    try:
+        # Get all RFPs grouped by funder
+        result = await db.execute(
+            select(
+                RFP.funder_name,
+                RFP.funding_type,
+                RFP.funding_amount,
+                RFP.status,
+            ).order_by(RFP.funder_name)
+        )
+        rows = result.all()
+
+        # Aggregate by funder name
+        funder_map: Dict[str, Dict[str, Any]] = {}
+        for row in rows:
+            name = row.funder_name or "Unknown"
+            if name not in funder_map:
+                funder_map[name] = {
+                    "name": name,
+                    "category": (row.funding_type.value if row.funding_type else "other").capitalize(),
+                    "awarded": 0.0,
+                    "pending": 0.0,
+                    "denied": 0.0,
+                }
+            amount = row.funding_amount or 0.0
+            status_val = row.status.value if row.status else "uploaded"
+
+            # Map RFP status to grant outcome
+            if status_val in ("analyzed", "archived"):
+                funder_map[name]["awarded"] += amount
+            elif status_val in ("uploaded", "parsing", "parsed"):
+                funder_map[name]["pending"] += amount
+
+        funders = list(funder_map.values())
+
+        # Sort by total descending
+        funders.sort(key=lambda f: f["awarded"] + f["pending"] + f["denied"], reverse=True)
+
+        total_awarded = sum(f["awarded"] for f in funders)
+        total_pending = sum(f["pending"] for f in funders)
+        total_denied = sum(f["denied"] for f in funders)
+
+        logger.info(f"Generated funder breakdown: {len(funders)} funders")
+
+        return {
+            "funders": funders,
+            "summary": {
+                "total_awarded": total_awarded,
+                "total_pending": total_pending,
+                "total_denied": total_denied,
+                "total_pipeline": total_awarded + total_pending + total_denied,
+                "funder_count": len(funders),
+            },
+        }
+    except Exception as e:
+        logger.error(f"Error generating funder breakdown: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate funder breakdown",
+        )
+
+
+# ============================================================================
 # GAP ANALYSIS ENDPOINTS
 # ============================================================================
 
