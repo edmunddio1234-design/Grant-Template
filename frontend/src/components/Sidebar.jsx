@@ -9,7 +9,8 @@ import {
   Sparkles,
   Menu,
   X,
-  Bell
+  Bell,
+  ArrowLeft
 } from 'lucide-react'
 import useAppStore from '../stores/appStore'
 import clsx from 'clsx'
@@ -53,6 +54,14 @@ export default function Sidebar({ open, setOpen }) {
                 <p className="text-xs text-blue-100">Grant Engine</p>
               </div>
             </div>
+
+            <a
+              href="https://www.foamportal.org"
+              className="flex items-center gap-2 px-4 py-2.5 mb-4 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white transition-colors text-sm font-medium"
+            >
+              <ArrowLeft size={16} />
+              Back to Grant Dashboard
+            </a>
 
             <nav className="space-y-2">
               {modules.map((module) => {
