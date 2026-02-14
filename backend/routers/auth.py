@@ -1,5 +1,5 @@
 """
-Authentication Routes for FOAM Grant Alignment Engine.
+Authentication Routes for Grant Alignment Engine.
 
 Handles login, registration, token refresh, and current user info.
 """

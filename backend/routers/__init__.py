@@ -1,5 +1,5 @@
 """
-FOAM Grant Alignment Engine - API Routers
+Grant Alignment Engine - API Routers
 
 Exports all application routers for modular endpoint organization.
 """

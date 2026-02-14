@@ -47,7 +47,7 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-foam-primary rounded-2xl mb-4">
             <span className="text-white font-bold text-2xl">FM</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">FOAM Grant Alignment Engine</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Grant Alignment Engine</h1>
           <p className="text-gray-500 mt-2">Sign in to manage your grant pipeline</p>
         </div>
 

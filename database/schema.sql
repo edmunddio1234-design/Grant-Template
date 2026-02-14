@@ -1,5 +1,5 @@
 -- ============================================================================
--- FOAM Grant Alignment Engine - PostgreSQL Schema
+-- Grant Alignment Engine - PostgreSQL Schema
 -- Production-Quality Database Design for Grant Management System
 -- ============================================================================
 -- Purpose: Comprehensive schema for managing grant requirements, boilerplate

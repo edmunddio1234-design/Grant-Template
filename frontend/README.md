@@ -1,4 +1,4 @@
-# FOAM Grant Alignment Engine - Frontend
+# Grant Alignment Engine - Frontend
 
 A professional React-based dashboard for managing grant applications and alignment with organizational boilerplate content.
 

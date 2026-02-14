@@ -1,4 +1,4 @@
-# Multi-stage build for FOAM Grant Alignment Engine API
+# Multi-stage build for Grant Alignment Engine API
 
 # Stage 1: Builder
 FROM python:3.11-slim as builder

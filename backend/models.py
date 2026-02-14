@@ -1,5 +1,5 @@
 """
-SQLAlchemy ORM models for FOAM Grant Alignment Engine.
+SQLAlchemy ORM models for Grant Alignment Engine.
 
 Defines all database entities with relationships, constraints, and indexes.
 """

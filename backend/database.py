@@ -1,5 +1,5 @@
 """
-Database configuration and session management for FOAM Grant Alignment Engine.
+Database configuration and session management for Grant Alignment Engine.
 
 Provides async SQLAlchemy setup with connection pooling and session factory.
 """

@@ -1,5 +1,5 @@
 """
-Configuration management for FOAM Grant Alignment Engine.
+Configuration management for Grant Alignment Engine.
 
 Handles environment-based configuration using Pydantic Settings.
 Supports dev, staging, and production environments.
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     """
 
     # Application Metadata
-    APP_NAME: str = "FOAM Grant Alignment Engine API"
+    APP_NAME: str = "Grant Alignment Engine API"
     APP_VERSION: str = "1.0.0"
     APP_DESCRIPTION: str = "AI-powered grant alignment and compliance analysis for Fathers On A Mission"
     ENVIRONMENT: str = Field(default="development")

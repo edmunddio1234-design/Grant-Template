@@ -1,5 +1,5 @@
 """
-FastAPI application entry point for FOAM Grant Alignment Engine.
+FastAPI application entry point for Grant Alignment Engine.
 
 Configures the API with middleware, exception handlers, and endpoints.
 """

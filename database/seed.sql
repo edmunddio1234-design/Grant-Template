@@ -1,5 +1,5 @@
 -- ============================================================================
--- FOAM Grant Alignment Engine - Seed Data
+-- Grant Alignment Engine - Seed Data
 -- Production-Quality Initialization with Real FOAM Organizational Data
 -- ============================================================================
 -- Purpose: Populate initial data for grant management system with authentic

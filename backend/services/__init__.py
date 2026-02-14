@@ -1,5 +1,5 @@
 """
-FOAM Grant Alignment Engine - Services Module
+Grant Alignment Engine - Services Module
 
 Exports all backend services for RFP parsing, crosswalk analysis, gap detection,
 plan generation, and AI-powered content generation.

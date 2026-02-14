@@ -1,5 +1,5 @@
 """
-Authentication Service for FOAM Grant Alignment Engine.
+Authentication Service for Grant Alignment Engine.
 
 Handles password hashing, JWT token creation/validation, and user authentication.
 """

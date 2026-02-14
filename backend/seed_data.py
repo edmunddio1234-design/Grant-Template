@@ -1,5 +1,5 @@
 """
-Database seed script for FOAM Grant Alignment Engine.
+Database seed script for Grant Alignment Engine.
 
 Populates the database with FOAM's institutional data, boilerplate content,
 tags, and default admin user.

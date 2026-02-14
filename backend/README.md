@@ -1,10 +1,10 @@
-# FOAM Grant Alignment Engine - Backend API
+# Grant Alignment Engine - Backend API
 
-A production-quality FastAPI backend for the FOAM Grant Alignment Engine, providing AI-powered grant alignment and compliance analysis for Fathers On A Mission.
+A production-quality FastAPI backend for the Grant Alignment Engine, providing AI-powered grant alignment and compliance analysis for Fathers On A Mission.
 
 ## Overview
 
-The FOAM Grant Alignment Engine backend is a comprehensive system for:
+The Grant Alignment Engine backend is a comprehensive system for:
 - Managing Request for Proposal (RFP) documents
 - Creating and versioning boilerplate content
 - Analyzing alignment between RFP requirements and organizational content
