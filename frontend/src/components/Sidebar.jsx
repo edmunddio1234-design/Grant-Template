@@ -55,13 +55,16 @@ export default function Sidebar({ open, setOpen }) {
               </div>
             </div>
 
-            <a
-              href="https://www.foamportal.org?view=admin"
-              className="flex items-center gap-2 px-4 py-2.5 mb-4 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white transition-colors text-sm font-medium"
+            <button
+              onClick={() => {
+                navigate('/')
+                setOpen(false)
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 mb-4 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white transition-colors text-sm font-medium w-full"
             >
               <ArrowLeft size={16} />
-              Back to Grant Dashboard
-            </a>
+              Back to Dashboard
+            </button>
 
             <nav className="space-y-2">
               {modules.map((module) => {
