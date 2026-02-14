@@ -4,6 +4,7 @@ FOAM Grant Alignment Engine - API Routers
 Exports all application routers for modular endpoint organization.
 """
 
+from .auth import router as auth_router
 from .boilerplate import router as boilerplate_router
 from .rfp import router as rfp_router
 from .crosswalk import router as crosswalk_router
@@ -12,6 +13,7 @@ from .dashboard import router as dashboard_router
 from .ai_draft import router as ai_draft_router
 
 __all__ = [
+    "auth_router",
     "boilerplate_router",
     "rfp_router",
     "crosswalk_router",
