@@ -214,7 +214,7 @@ export default function GrantPlanGenerator() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    navigate('/ai-draft')
+                    navigate('/ai-framework')
                   }}
                   className="flex-1 btn-primary btn-sm"
                 >
@@ -383,7 +383,7 @@ export default function GrantPlanGenerator() {
                         </div>
                       </div>
                       <button
-                        onClick={() => navigate('/ai-draft')}
+                        onClick={() => navigate('/ai-framework')}
                         className="text-sm text-foam-primary hover:underline"
                       >Edit with AI</button>
                     </div>
@@ -421,7 +421,7 @@ export default function GrantPlanGenerator() {
             {/* Export Options */}
             <div className="flex gap-2 pt-4 border-t border-gray-200">
               <button
-                onClick={() => navigate('/ai-draft')}
+                onClick={() => navigate('/ai-framework')}
                 className="flex-1 btn-primary"
               >
                 <Sparkles size={20} />
@@ -440,6 +440,21 @@ export default function GrantPlanGenerator() {
               >
                 <Printer size={20} />
                 Print
+              </button>
+            </div>
+
+            {/* Remove Plan */}
+            <div className="pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  handleDeletePlan(selectedPlan.id)
+                  setShowPlanDetail(false)
+                  setSelectedPlan(null)
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 border-2 border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition-colors font-medium"
+              >
+                <Trash2 size={18} />
+                Remove Grant Plan
               </button>
             </div>
           </div>
