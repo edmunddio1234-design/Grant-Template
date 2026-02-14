@@ -83,16 +83,18 @@ export default function Sidebar({ open, setOpen }) {
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                navigate('/')
-                setOpen(false)
-              }}
-              className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white transition-colors text-xs font-medium w-full"
-            >
-              <ArrowLeft size={14} />
-              Dashboard
-            </button>
+            {location.pathname !== '/' && (
+              <button
+                onClick={() => {
+                  navigate('/')
+                  setOpen(false)
+                }}
+                className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white transition-colors text-xs font-medium w-full"
+              >
+                <ArrowLeft size={14} />
+                Back to Dashboard
+              </button>
+            )}
 
             <nav className="space-y-1">
               {modules.map((module) => {
