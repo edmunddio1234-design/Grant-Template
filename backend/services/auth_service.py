@@ -9,8 +9,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,18 +19,25 @@ from models import User
 
 logger = logging.getLogger(__name__)
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
+    """Hash a password using bcrypt directly."""
+    password_bytes = password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password against its hash using bcrypt directly."""
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            hashed_password.encode("utf-8"),
+        )
+    except Exception as e:
+        logger.error(f"Password verification error: {e}")
+        return False
 
 
 def create_access_token(user_id: str, email: str, role: str) -> str:
