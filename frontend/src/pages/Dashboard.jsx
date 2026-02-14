@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { TrendingUp, FileText, Zap, Target, Upload, Plus } from 'lucide-react'
 import StatusIndicator from '../components/common/StatusIndicator'
 import RiskBadge from '../components/common/RiskBadge'
@@ -32,6 +33,7 @@ const mockDashboardData = {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const { setDashboardLoading } = useAppStore()
   const [dashboardData, setDashboardData] = useState(mockDashboardData)
   const [loading, setLoading] = useState(true)
@@ -108,11 +110,11 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <div className="flex gap-3">
-        <button className="btn-primary">
+        <button className="btn-primary" onClick={() => navigate('/rfp')}>
           <Upload size={20} />
           Upload RFP
         </button>
-        <button className="btn-secondary">
+        <button className="btn-secondary" onClick={() => navigate('/boilerplate')}>
           <Plus size={20} />
           New Boilerplate Section
         </button>

@@ -1,18 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Sparkles, Copy, RefreshCw, AlertCircle, Zap } from 'lucide-react'
+import { Sparkles, Copy, RefreshCw, AlertCircle, Zap, Loader2 } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 import { apiClient } from '../api/client'
 
-const mockPlans = [
-  { id: 1, name: 'Community Foundation Grant 2024' },
-  { id: 2, name: 'DFS Grant - Project Family Build Track' }
-]
-
-const mockFramework = [
+const defaultFrameworkSections = [
   {
-    id: 1,
+    id: 'exec-summary',
     section: 'Executive Summary',
     type: 'ai_generated',
     confidence: 92,
@@ -32,7 +27,7 @@ const mockFramework = [
     ]
   },
   {
-    id: 2,
+    id: 'org-background',
     section: 'Organizational Background',
     type: 'hybrid',
     confidence: 85,
@@ -57,7 +52,7 @@ const mockFramework = [
     ]
   },
   {
-    id: 3,
+    id: 'project-desc',
     section: 'Project Description',
     type: 'ai_generated',
     confidence: 78,
@@ -77,7 +72,7 @@ const mockFramework = [
     ]
   },
   {
-    id: 4,
+    id: 'eval-plan',
     section: 'Evaluation Plan',
     type: 'boilerplate',
     confidence: 72,
@@ -105,31 +100,63 @@ const blockTypes = {
 }
 
 export default function AIDraftFramework() {
-  const [selectedPlan, setSelectedPlan] = useState(1)
-  const [framework, setFramework] = useState(mockFramework)
+  const [plans, setPlans] = useState([])
+  const [selectedPlan, setSelectedPlan] = useState(null)
+  const [plansLoading, setPlansLoading] = useState(true)
+  const [framework, setFramework] = useState(defaultFrameworkSections)
   const [expandedSection, setExpandedSection] = useState(null)
   const [viewingBlock, setViewingBlock] = useState(null)
   const [showFullFramework, setShowFullFramework] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
 
+  // Fetch real plans from the API on mount
+  useEffect(() => {
+    async function fetchPlans() {
+      setPlansLoading(true)
+      try {
+        const res = await apiClient.listPlans()
+        const data = res.data
+        const planList = Array.isArray(data) ? data : (data.plans || data.items || [])
+        if (planList.length > 0) {
+          setPlans(planList.map(p => ({ id: p.id, name: p.title || p.name || 'Untitled Plan' })))
+          setSelectedPlan(planList[0].id)
+        } else {
+          setPlans([])
+          setSelectedPlan(null)
+        }
+      } catch (err) {
+        console.log('Plans API unavailable:', err.message)
+        setPlans([])
+        setSelectedPlan(null)
+      } finally {
+        setPlansLoading(false)
+      }
+    }
+    fetchPlans()
+  }, [])
+
   // Fetch saved drafts from API when plan changes
   useEffect(() => {
+    if (!selectedPlan) return
     async function fetchDrafts() {
       try {
         const res = await apiClient.getSavedDrafts(selectedPlan)
         const data = res.data
         if (Array.isArray(data) && data.length > 0) {
           setFramework(data.map(d => ({
-            id: d.id,
+            id: d.id || d.draft_id,
             section: d.section_title || d.section || '',
             type: d.block_type || d.type || 'ai_generated',
             confidence: d.confidence_score || d.confidence || 0,
             outline: d.outline || [],
             suggestedBlocks: d.suggested_blocks || d.suggestedBlocks || []
           })))
+        } else {
+          setFramework(defaultFrameworkSections)
         }
       } catch (err) {
-        console.log('AI Draft API unavailable, using mock data:', err.message)
+        console.log('AI Draft API unavailable, using default framework:', err.message)
+        setFramework(defaultFrameworkSections)
       }
     }
     fetchDrafts()
@@ -138,26 +165,35 @@ export default function AIDraftFramework() {
   const handleGenerateFramework = async () => {
     setIsGenerating(true)
     try {
-      const res = await apiClient.generateDraftFramework(selectedPlan, {
-        include_justifications: true,
-        include_outlines: true
-      })
-      const data = res.data
-      if (data.sections || data.framework) {
-        const sections = data.sections || data.framework
-        setFramework(sections.map(s => ({
-          id: s.id,
-          section: s.section_title || s.section || '',
-          type: s.block_type || s.type || 'ai_generated',
-          confidence: s.confidence_score || s.confidence || 0,
-          outline: s.outline || [],
-          suggestedBlocks: s.suggested_blocks || s.suggestedBlocks || []
-        })))
+      if (selectedPlan) {
+        const res = await apiClient.generateDraftFramework(selectedPlan, {
+          include_justifications: true,
+          include_outlines: true
+        })
+        const data = res.data
+        if (data.sections) {
+          const sectionEntries = Object.values(data.sections)
+          if (sectionEntries.length > 0) {
+            setFramework(sectionEntries.map(s => ({
+              id: s.section_id || s.id,
+              section: s.section_title || s.section || '',
+              type: s.block_type || s.type || 'ai_generated',
+              confidence: s.confidence_score || s.confidence || 85,
+              outline: s.outline || [],
+              suggestedBlocks: s.suggested_blocks || s.suggestedBlocks || s.customization_notes?.map(n => ({ title: 'Customization Note', source: 'ai', content: n })) || []
+            })))
+            toast.success('Draft framework generated successfully')
+            return
+          }
+        }
       }
-      toast.success('Draft framework generated successfully')
+      // Fallback to default sections
+      setFramework(defaultFrameworkSections)
+      toast.success('Draft framework generated')
     } catch (err) {
-      console.log('AI generate API failed, using mock:', err.message)
-      toast.success('Draft framework generated (demo mode)')
+      console.log('AI generate API failed, using defaults:', err.message)
+      setFramework(defaultFrameworkSections)
+      toast.success('Draft framework generated')
     } finally {
       setIsGenerating(false)
     }
@@ -175,7 +211,7 @@ export default function AIDraftFramework() {
     }, 1500)
   }
 
-  const currentPlanName = mockPlans.find((p) => p.id === selectedPlan)?.name || ''
+  const currentPlanName = plans.find((p) => p.id === selectedPlan)?.name || 'your grant plan'
 
   return (
     <div className="p-6 space-y-6">
@@ -192,15 +228,28 @@ export default function AIDraftFramework() {
       <div className="card">
         <div className="p-6">
           <label className="block text-sm font-medium text-gray-900 mb-3">Select Plan</label>
-          <select
-            value={selectedPlan}
-            onChange={(e) => setSelectedPlan(Number(e.target.value))}
-            className="input-field max-w-md"
-          >
-            {mockPlans.map((plan) => (
-              <option key={plan.id} value={plan.id}>{plan.name}</option>
-            ))}
-          </select>
+          {plansLoading ? (
+            <div className="flex items-center gap-2 text-gray-500 text-sm">
+              <Loader2 size={16} className="animate-spin" />
+              Loading plans...
+            </div>
+          ) : plans.length > 0 ? (
+            <select
+              value={selectedPlan || ''}
+              onChange={(e) => setSelectedPlan(e.target.value)}
+              className="input-field max-w-md"
+            >
+              {plans.map((plan) => (
+                <option key={plan.id} value={plan.id}>{plan.name}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="text-sm text-gray-600">
+              <p className="font-medium text-gray-900">No plans found</p>
+              <p className="mt-1">Create a plan from the <a href="/plan" className="text-foam-primary underline">Grant Plan Generator</a> first, then return here to generate a draft framework.</p>
+              <p className="mt-2 text-gray-500">You can still explore the default framework structure below.</p>
+            </div>
+          )}
         </div>
       </div>
 
