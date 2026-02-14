@@ -33,8 +33,7 @@ from schemas import (
     PaginatedResponse,
 )
 
-# Import services (adjust based on actual implementation)
-# from services import CrosswalkEngine
+from services.crosswalk_engine import CrosswalkEngine, AlignmentLevel, RiskLevel
 
 logger = logging.getLogger(__name__)
 
@@ -129,36 +128,120 @@ async def generate_crosswalk(
         )
         sections = sec_result.scalars().all()
 
-        # TODO: Call CrosswalkEngine to generate alignments
-        # For now, return placeholder results
+        # Build boilerplate data dict for the CrosswalkEngine
+        boilerplate_for_engine = {}
+        boilerplate_lookup = {}  # Map area/tag -> BoilerplateSection ORM object
+        for bp in sections:
+            area_key = (bp.category or bp.section_title or "general").lower().replace(" ", "_")
+            boilerplate_for_engine[area_key] = {
+                "name": bp.section_title,
+                "content": bp.content or "",
+                "tags": bp.tags if hasattr(bp, 'tags') and bp.tags else [area_key],
+            }
+            boilerplate_lookup[area_key] = bp
+
+        # Initialize CrosswalkEngine with real boilerplate data (falls back to defaults if empty)
+        engine = CrosswalkEngine(
+            boilerplate_data=boilerplate_for_engine if boilerplate_for_engine else None,
+            use_ml=True,
+        )
+
+        # Map alignment levels to DB enums
+        level_map = {
+            AlignmentLevel.STRONG: AlignmentScoreEnum.STRONG,
+            AlignmentLevel.PARTIAL: AlignmentScoreEnum.PARTIAL,
+            AlignmentLevel.WEAK: AlignmentScoreEnum.WEAK,
+            AlignmentLevel.NONE: AlignmentScoreEnum.NONE,
+        }
+        risk_map = {
+            RiskLevel.GREEN: RiskLevelEnum.GREEN,
+            RiskLevel.YELLOW: RiskLevelEnum.YELLOW,
+            RiskLevel.RED: RiskLevelEnum.RED,
+        }
+
         mappings_created = 0
         auto_matches = 0
+        gaps_found = 0
 
-        # Create placeholder crosswalk maps
+        # Run the real engine for each requirement against all boilerplate
         for requirement in requirements:
-            if sections:
-                # Auto-match first section for demonstration
-                existing = await db.execute(
-                    select(CrosswalkMap).where(
-                        and_(
-                            CrosswalkMap.rfp_requirement_id == requirement.id,
-                            CrosswalkMap.boilerplate_section_id == sections[0].id,
+            req_text = f"{requirement.section_name}: {requirement.description}"
+
+            # Identify matching FOAM areas via the engine
+            matching_areas = engine._identify_matching_areas(req_text)
+
+            if matching_areas and sections:
+                # For each matching area, find the best boilerplate section
+                best_score = 0.0
+                best_bp = None
+                best_level = AlignmentLevel.NONE
+                best_risk = RiskLevel.YELLOW
+
+                for foam_area, strength in matching_areas.items():
+                    bp_data = engine._get_boilerplate_for_area(foam_area, None)
+                    if bp_data:
+                        similarity = engine._compute_similarity(req_text, bp_data["content"])
+                        tag_match = engine._match_tags(req_text, bp_data.get("tags", []))
+                        score, level = engine._score_alignment(similarity, tag_match)
+                        risk = engine._assess_risk(level, requirement.scoring_weight or 0.5)
+
+                        if score > best_score:
+                            best_score = score
+                            best_level = level
+                            best_risk = risk
+                            # Try to find matching ORM boilerplate
+                            best_bp = boilerplate_lookup.get(foam_area) or (sections[0] if sections else None)
+
+                if best_bp:
+                    # Check for existing mapping
+                    existing = await db.execute(
+                        select(CrosswalkMap).where(
+                            and_(
+                                CrosswalkMap.rfp_requirement_id == requirement.id,
+                                CrosswalkMap.boilerplate_section_id == best_bp.id,
+                            )
                         )
                     )
-                )
-
-                if not existing.scalar_one_or_none():
-                    mapping = CrosswalkMap(
-                        rfp_requirement_id=requirement.id,
-                        boilerplate_section_id=sections[0].id,
-                        alignment_score=AlignmentScoreEnum.PARTIAL,
-                        gap_flag=False,
-                        risk_level=RiskLevelEnum.GREEN,
-                        auto_matched=True,
+                    if not existing.scalar_one_or_none():
+                        gap = best_level in (AlignmentLevel.NONE, AlignmentLevel.WEAK)
+                        mapping = CrosswalkMap(
+                            rfp_requirement_id=requirement.id,
+                            boilerplate_section_id=best_bp.id,
+                            alignment_score=level_map.get(best_level, AlignmentScoreEnum.PARTIAL),
+                            gap_flag=gap,
+                            risk_level=risk_map.get(best_risk, RiskLevelEnum.YELLOW),
+                            auto_matched=True,
+                            customization_needed=(best_level != AlignmentLevel.STRONG),
+                        )
+                        db.add(mapping)
+                        mappings_created += 1
+                        auto_matches += 1
+                        if gap:
+                            gaps_found += 1
+            else:
+                # No keyword match — flag as gap, link to first boilerplate section if available
+                if sections:
+                    existing = await db.execute(
+                        select(CrosswalkMap).where(
+                            and_(
+                                CrosswalkMap.rfp_requirement_id == requirement.id,
+                                CrosswalkMap.boilerplate_section_id == sections[0].id,
+                            )
+                        )
                     )
-                    db.add(mapping)
-                    mappings_created += 1
-                    auto_matches += 1
+                    if not existing.scalar_one_or_none():
+                        mapping = CrosswalkMap(
+                            rfp_requirement_id=requirement.id,
+                            boilerplate_section_id=sections[0].id,
+                            alignment_score=AlignmentScoreEnum.NONE,
+                            gap_flag=True,
+                            risk_level=RiskLevelEnum.RED,
+                            auto_matched=True,
+                            customization_needed=True,
+                        )
+                        db.add(mapping)
+                        mappings_created += 1
+                        gaps_found += 1
 
         await db.commit()
 
@@ -168,7 +251,9 @@ async def generate_crosswalk(
             "rfp_id": str(rfp_id),
             "mappings_created": mappings_created,
             "auto_matches": auto_matches,
+            "gaps_found": gaps_found,
             "manual_reviews_needed": len(requirements) - auto_matches,
+            "engine": "CrosswalkEngine (TF-IDF + keyword)",
             "timestamp": datetime.utcnow().isoformat(),
         }
     except HTTPException:

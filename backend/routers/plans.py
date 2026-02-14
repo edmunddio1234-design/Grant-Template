@@ -21,6 +21,7 @@ from models import (
     GrantPlan,
     GrantPlanSection,
     RFP,
+    RFPRequirement,
     GrantPlanStatusEnum,
     RiskLevelEnum,
     ActionTypeEnum,
@@ -104,8 +105,11 @@ async def generate_plan(
         HTTPException: If RFP not found or generation fails.
     """
     try:
-        # Verify RFP exists
-        rfp = await db.get(RFP, str(rfp_id))
+        # Load RFP with its parsed requirements
+        rfp_result = await db.execute(
+            select(RFP).options(selectinload(RFP.requirements)).where(RFP.id == str(rfp_id))
+        )
+        rfp = rfp_result.scalar_one_or_none()
         if not rfp:
             logger.warning(f"RFP not found: {rfp_id}")
             raise HTTPException(
@@ -125,27 +129,47 @@ async def generate_plan(
         db.add(plan)
         await db.flush()
 
-        # TODO: Call PlanGeneratorService to generate sections
-        # For now, create placeholder sections
-        section_order = 0
-        for section_title in [
-            "Executive Summary",
-            "Project Description",
-            "Target Population",
-            "Program Goals and Objectives",
-            "Project Implementation",
-            "Evaluation Plan",
-            "Organization Capacity",
-            "Budget Narrative",
-        ]:
-            section = GrantPlanSection(
-                plan_id=plan.id,
-                section_title=section_title,
-                section_order=section_order,
-                suggested_content=f"Content for {section_title}",
-            )
-            db.add(section)
-            section_order += 1
+        # Build plan sections from real RFP requirements
+        requirements = sorted(rfp.requirements, key=lambda r: r.section_order) if rfp.requirements else []
+
+        if requirements:
+            # Create a plan section for each parsed RFP requirement
+            for idx, req in enumerate(requirements):
+                section = GrantPlanSection(
+                    plan_id=plan.id,
+                    section_title=req.section_name,
+                    section_order=idx,
+                    word_limit=req.word_limit,
+                    suggested_content=req.description or f"Address the '{req.section_name}' requirement per the RFP.",
+                    customization_notes=(
+                        f"Scoring weight: {req.scoring_weight}" if req.scoring_weight else None
+                    ),
+                    compliance_status="pending",
+                )
+                db.add(section)
+            logger.info(f"Created {len(requirements)} plan sections from RFP requirements")
+        else:
+            # Fallback: generate sensible default sections if no requirements were parsed
+            logger.warning(f"No parsed requirements for RFP {rfp_id} — using default sections")
+            default_sections = [
+                ("Executive Summary", "Provide a concise overview of the proposed project, including goals, target population, and expected outcomes."),
+                ("Organization Background", "Describe FOAM's mission, history, capacity, and relevant experience."),
+                ("Project Description", "Detail the proposed project activities, methodology, and implementation plan."),
+                ("Target Population", "Describe the population to be served, including demographics and needs assessment."),
+                ("Goals and Objectives", "List SMART goals and measurable objectives aligned with funder priorities."),
+                ("Evaluation Plan", "Outline data collection methods, outcome measurements, and reporting strategies."),
+                ("Budget Narrative", "Justify all budget line items and demonstrate cost-effectiveness."),
+                ("Sustainability Plan", "Describe how the project will be sustained beyond the grant period."),
+            ]
+            for idx, (title, content) in enumerate(default_sections):
+                section = GrantPlanSection(
+                    plan_id=plan.id,
+                    section_title=title,
+                    section_order=idx,
+                    suggested_content=content,
+                    compliance_status="pending",
+                )
+                db.add(section)
 
         await db.commit()
         await db.refresh(plan)

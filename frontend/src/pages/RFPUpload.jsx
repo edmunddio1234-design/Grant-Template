@@ -7,54 +7,14 @@ import DataTable from '../components/common/DataTable'
 import toast from 'react-hot-toast'
 import { apiClient } from '../api/client'
 
-const mockRFPs = [
-  {
-    id: 1,
-    name: 'Community Foundation Grant 2024',
-    uploadDate: '2024-02-10',
-    status: 'parsed',
-    file: 'community_foundation_2024.pdf',
-    requirements: 23,
-    sections: 8,
-    wordLimit: 5000
-  },
-  {
-    id: 2,
-    name: 'Department of Family Services RFP',
-    uploadDate: '2024-02-08',
-    status: 'analyzing',
-    file: 'dfs_rfp_2024.docx',
-    requirements: 31,
-    sections: 12,
-    wordLimit: 7500
-  },
-  {
-    id: 3,
-    name: 'Local Nonprofit Partnership Grant',
-    uploadDate: '2024-02-05',
-    status: 'uploaded',
-    file: 'nonprofit_partnership.pdf',
-    requirements: 18,
-    sections: 6,
-    wordLimit: 4000
-  }
-]
-
-const mockRequirements = [
-  { section: 'Executive Summary', requirements: 4, wordLimit: 250, mandatory: true },
-  { section: 'Organizational Background', requirements: 3, wordLimit: 500, mandatory: true },
-  { section: 'Project Description', requirements: 6, wordLimit: 1500, mandatory: true },
-  { section: 'Evaluation Plan', requirements: 3, wordLimit: 750, mandatory: true },
-  { section: 'Budget Narrative', requirements: 4, wordLimit: 400, mandatory: true },
-  { section: 'Sustainability Plan', requirements: 2, wordLimit: 300, mandatory: false }
-]
-
 export default function RFPUpload() {
-  const [rfps, setRFPs] = useState(mockRFPs)
+  const [rfps, setRFPs] = useState([])
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [isUploading, setIsUploading] = useState(false)
   const [viewingRFP, setViewingRFP] = useState(null)
   const [showRequirements, setShowRequirements] = useState(false)
+  const [realRequirements, setRealRequirements] = useState([])
+  const [loadingRequirements, setLoadingRequirements] = useState(false)
 
   // Fetch RFPs from API on mount
   useEffect(() => {
@@ -76,11 +36,38 @@ export default function RFPUpload() {
           })))
         }
       } catch (err) {
-        console.log('RFP API unavailable, using mock data:', err.message)
+        console.log('RFP API unavailable:', err.message)
       }
     }
     fetchRFPs()
   }, [])
+
+  // Fetch real requirements when viewing an RFP
+  const fetchRequirements = async (rfpId) => {
+    setLoadingRequirements(true)
+    setRealRequirements([])
+    try {
+      const res = await apiClient.getRequirements(rfpId)
+      const data = res.data
+      const items = Array.isArray(data) ? data : (data.items || data.requirements || [])
+      setRealRequirements(items.map(r => ({
+        id: r.id,
+        section: r.section_name || r.name || 'Unnamed',
+        description: r.description || '',
+        wordLimit: r.word_limit || 0,
+        scoringWeight: r.scoring_weight || null,
+        mandatory: r.eligibility_flag ?? true,
+        order: r.section_order || 0,
+        formattingNotes: r.formatting_notes || '',
+        attachments: r.required_attachments || []
+      })))
+    } catch (err) {
+      console.log('Requirements API unavailable:', err.message)
+      setRealRequirements([])
+    } finally {
+      setLoadingRequirements(false)
+    }
+  }
 
   const handleFileDrop = (files) => {
     setIsUploading(true)
@@ -202,6 +189,7 @@ export default function RFPUpload() {
             onClick={() => {
               setViewingRFP(row)
               setShowRequirements(true)
+              fetchRequirements(row.id)
             }}
             className="p-1 hover:bg-gray-100 rounded transition-colors text-gray-600"
             title="View"
@@ -332,107 +320,78 @@ export default function RFPUpload() {
               </div>
             </div>
 
-            {/* Requirements Table */}
+            {/* Parsed Requirements from API */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Section Requirements</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b-2 border-gray-200 bg-gray-50">
-                      <th className="text-left py-2 px-3 font-semibold text-gray-900">Section</th>
-                      <th className="text-center py-2 px-3 font-semibold text-gray-900">Req.</th>
-                      <th className="text-center py-2 px-3 font-semibold text-gray-900">Word Limit</th>
-                      <th className="text-center py-2 px-3 font-semibold text-gray-900">Required</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockRequirements.map((req, index) => (
-                      <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="py-3 px-3 font-medium text-gray-900">{req.section}</td>
-                        <td className="text-center py-3 px-3 text-gray-600">{req.requirements}</td>
-                        <td className="text-center py-3 px-3 text-gray-600">{req.wordLimit}</td>
-                        <td className="text-center py-3 px-3">
-                          {req.mandatory ? (
-                            <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded">Yes</span>
-                          ) : (
-                            <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded">No</span>
-                          )}
-                        </td>
+              <h4 className="font-semibold text-gray-900 mb-3">Parsed Requirements</h4>
+              {loadingRequirements ? (
+                <div className="flex items-center gap-2 text-gray-500 text-sm py-4">
+                  <RefreshCw size={16} className="animate-spin" />
+                  Loading requirements...
+                </div>
+              ) : realRequirements.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b-2 border-gray-200 bg-gray-50">
+                        <th className="text-left py-2 px-3 font-semibold text-gray-900">Section</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-900">Description</th>
+                        <th className="text-center py-2 px-3 font-semibold text-gray-900">Word Limit</th>
+                        <th className="text-center py-2 px-3 font-semibold text-gray-900">Weight</th>
+                        <th className="text-center py-2 px-3 font-semibold text-gray-900">Required</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {realRequirements.sort((a, b) => a.order - b.order).map((req) => (
+                        <tr key={req.id} className="border-b border-gray-200 hover:bg-gray-50">
+                          <td className="py-3 px-3 font-medium text-gray-900">{req.section}</td>
+                          <td className="py-3 px-3 text-gray-600 text-xs max-w-xs truncate">{req.description}</td>
+                          <td className="text-center py-3 px-3 text-gray-600">{req.wordLimit || '—'}</td>
+                          <td className="text-center py-3 px-3 text-gray-600">
+                            {req.scoringWeight ? `${(req.scoringWeight * 100).toFixed(0)}%` : '—'}
+                          </td>
+                          <td className="text-center py-3 px-3">
+                            {req.mandatory ? (
+                              <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded">Yes</span>
+                            ) : (
+                              <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded">No</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 py-4">No parsed requirements found for this RFP. Try re-parsing.</p>
+              )}
             </div>
 
-            {/* Scoring Criteria */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Scoring Criteria</h4>
-              <div className="space-y-2">
-                <div className="p-3 bg-gray-50 rounded border border-gray-200">
-                  <p className="font-medium text-gray-900 text-sm">Project Impact & Outcomes</p>
-                  <p className="text-xs text-gray-600 mt-1">40% of total score - Must demonstrate clear measurable outcomes</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded border border-gray-200">
-                  <p className="font-medium text-gray-900 text-sm">Organizational Capacity</p>
-                  <p className="text-xs text-gray-600 mt-1">25% of total score - Staffing, infrastructure, and past performance</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded border border-gray-200">
-                  <p className="font-medium text-gray-900 text-sm">Budget & Budget Narrative</p>
-                  <p className="text-xs text-gray-600 mt-1">20% of total score - Cost-effectiveness and justification</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded border border-gray-200">
-                  <p className="font-medium text-gray-900 text-sm">Evaluation Plan</p>
-                  <p className="text-xs text-gray-600 mt-1">15% of total score - Data collection and analysis methods</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Eligibility Requirements */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Eligibility Requirements</h4>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex gap-2">
-                  <span className="text-foam-green font-bold">✓</span>
-                  <span>Must be 501(c)(3) nonprofit organization</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-foam-green font-bold">✓</span>
-                  <span>Operating in Louisiana for minimum 2 years</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-foam-green font-bold">✓</span>
-                  <span>Serve families and/or fatherhood initiatives</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-foam-green font-bold">✓</span>
-                  <span>No organizational debt or compliance issues</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Formatting Requirements */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Formatting Requirements</h4>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="p-3 bg-gray-50 rounded">
-                  <p className="font-medium text-gray-900">Font</p>
-                  <p className="text-gray-600">Times New Roman, 12pt</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded">
-                  <p className="font-medium text-gray-900">Spacing</p>
-                  <p className="text-gray-600">Single or 1.5 line</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded">
-                  <p className="font-medium text-gray-900">Margins</p>
-                  <p className="text-gray-600">1 inch on all sides</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded">
-                  <p className="font-medium text-gray-900">Format</p>
-                  <p className="text-gray-600">PDF or Word Document</p>
+            {/* Attachments & Notes (from real data) */}
+            {realRequirements.some(r => r.formattingNotes || (r.attachments && r.attachments.length > 0)) && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Additional Notes</h4>
+                <div className="space-y-2">
+                  {realRequirements.filter(r => r.formattingNotes).map((req) => (
+                    <div key={req.id} className="p-3 bg-gray-50 rounded border border-gray-200">
+                      <p className="font-medium text-gray-900 text-sm">{req.section}</p>
+                      <p className="text-xs text-gray-600 mt-1">{req.formattingNotes}</p>
+                    </div>
+                  ))}
+                  {realRequirements.filter(r => r.attachments && r.attachments.length > 0).map((req) => (
+                    <div key={`att-${req.id}`} className="p-3 bg-amber-50 rounded border border-amber-200">
+                      <p className="font-medium text-gray-900 text-sm">{req.section} — Required Attachments</p>
+                      <ul className="mt-1 space-y-1">
+                        {req.attachments.map((att, i) => (
+                          <li key={i} className="text-xs text-amber-800 flex gap-2">
+                            <span>•</span><span>{att}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </Modal>
       )}
