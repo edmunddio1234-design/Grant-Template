@@ -43,13 +43,13 @@ class Settings(BaseSettings):
     # Application Metadata
     APP_NAME: str = "Grant Alignment Engine API"
     APP_VERSION: str = "1.0.0"
-    APP_DESCRIPTION: str = "AI-powered grant alignment and compliance analysis for FOAM"
+    APP_DESCRIPTION: str = "AI-powered grant alignment and compliance analysis for nonprofit organizations"
     ENVIRONMENT: str = Field(default="development")
     DEBUG: bool = Field(default=True)
 
     # Database Configuration
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://user:password@localhost:5432/foam_grants",
+        default="postgresql+asyncpg://user:password@localhost:5432/gae_grants",
         description="Async PostgreSQL connection string"
     )
     DATABASE_POOL_SIZE: int = Field(default=20, ge=5, le=100)
@@ -75,7 +75,7 @@ class Settings(BaseSettings):
     JWT_REFRESH_EXPIRATION_DAYS: int = 7
 
     # File Upload Configuration
-    UPLOAD_DIR: str = "/tmp/foam_uploads"
+    UPLOAD_DIR: str = "/tmp/gae_uploads"
     UPLOAD_MAX_FILE_SIZE: int = Field(default=50 * 1024 * 1024, description="Max file size in bytes (50MB)")
     ALLOWED_FILE_TYPES: str = ".pdf,.docx,.doc,.txt"
 
@@ -108,17 +108,16 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = Field(default="INFO")
     LOG_FORMAT: str = "json"  # json or text
 
-    # FOAM Organization Data
-    ORGANIZATION_NAME: str = "FOAM"
-    ORGANIZATION_EIN: str = "82-2374110"
+    # Organization Data (configurable per deployment)
+    ORGANIZATION_NAME: str = "My Organization"
+    ORGANIZATION_EIN: str = ""
     ORGANIZATION_501C3: bool = True
-    ORGANIZATION_FOUNDED: int = 2017
-    ORGANIZATION_LOCATION: str = "East Baton Rouge Parish, Louisiana"
+    ORGANIZATION_FOUNDED: int = 2020
+    ORGANIZATION_LOCATION: str = ""
 
-    # FOAM Program Configuration
-    FOAM_ANNUAL_TARGET_FATHERS: int = 140
-    FOAM_ANNUAL_TARGET_CHILDREN: int = 210
-    FOAM_PROGRAMS: str = "Project Family Build,Responsible Fatherhood Classes,Celebration of Fatherhood Events,Louisiana Barracks Program"
+    # Program Configuration
+    ORG_ANNUAL_TARGET_CLIENTS: int = 100
+    ORG_PROGRAMS: str = ""
 
     # Data System Integration
     EMPOWERDB_ENABLED: bool = False
@@ -167,9 +166,9 @@ class Settings(BaseSettings):
         return _parse_list(self.ALLOWED_FILE_TYPES)
 
     @property
-    def foam_programs(self) -> list[str]:
-        """Parse FOAM_PROGRAMS into a list."""
-        return _parse_list(self.FOAM_PROGRAMS)
+    def org_programs(self) -> list[str]:
+        """Parse ORG_PROGRAMS into a list."""
+        return _parse_list(self.ORG_PROGRAMS)
 
     # --- Convenience methods ---
 

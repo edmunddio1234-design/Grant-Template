@@ -4,11 +4,11 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: foam_postgres
+    container_name: gae_postgres
     environment:
-      POSTGRES_USER: foam_user
-      POSTGRES_PASSWORD: foam_password
-      POSTGRES_DB: foam_grants
+      POSTGRES_USER: gae_user
+      POSTGRES_PASSWORD: gae_password
+      POSTGRES_DB: gae_grants
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     ports:
       - "5432:5432"
@@ -16,17 +16,17 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init_db.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U foam_user -d foam_grants"]
+      test: ["CMD-SHELL", "pg_isready -U gae_user -d gae_grants"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - foam_network
+      - gae_network
 
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: foam_redis
+    container_name: gae_redis
     ports:
       - "6379:6379"
     volumes:
@@ -37,19 +37,19 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - foam_network
+      - gae_network
 
   # FastAPI Application
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: foam_api
+    container_name: gae_api
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       ENVIRONMENT: development
       DEBUG: "true"
-      DATABASE_URL: postgresql+asyncpg://foam_user:foam_password@postgres:5432/foam_grants
+      DATABASE_URL: postgresql+asyncpg://gae_user:gae_password@postgres:5432/gae_grants
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
@@ -67,12 +67,12 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - foam_network
+      - gae_network
 
   # pgAdmin - Database Management UI (Optional)
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: foam_pgadmin
+    container_name: gae_pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin
@@ -83,19 +83,19 @@ services:
     depends_on:
       - postgres
     networks:
-      - foam_network
+      - gae_network
 
   # Celery Worker (Optional - for async tasks)
   celery:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: foam_celery
+    container_name: gae_celery
     command: celery -A celery_app worker --loglevel=info
     environment:
       ENVIRONMENT: development
       DEBUG: "true"
-      DATABASE_URL: postgresql+asyncpg://foam_user:foam_password@postgres:5432/foam_grants
+      DATABASE_URL: postgresql+asyncpg://gae_user:gae_password@postgres:5432/gae_grants
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
@@ -108,7 +108,7 @@ services:
       - postgres
       - redis
     networks:
-      - foam_network
+      - gae_network
 
 volumes:
   postgres_data:
@@ -119,7 +119,7 @@ volumes:
     driver: local
 
 networks:
-  foam_network:
+  gae_network:
     driver: bridge
 
 # Service information:
@@ -130,9 +130,9 @@ networks:
 # celery     - Async task worker
 #
 # Database credentials:
-#   User: foam_user
-#   Password: foam_password
-#   Database: foam_grants
+#   User: gae_user
+#   Password: gae_password
+#   Database: gae_grants
 #
 # pgAdmin credentials:
 #   Email: admin@example.com

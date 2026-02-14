@@ -1,7 +1,7 @@
 """
 Database seed script for Grant Alignment Engine.
 
-Populates the database with FOAM's institutional data, boilerplate content,
+Populates the database with the organization's institutional data, boilerplate content,
 tags, and default admin user.
 
 Usage:
@@ -41,7 +41,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def seed_database() -> None:
     """
-    Seed the database with FOAM institutional data.
+    Seed the database with organizational institutional data.
 
     This function:
     1. Creates all tables
@@ -156,7 +156,7 @@ async def seed_tags(session: AsyncSession) -> None:
 
 async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> None:
     """
-    Seed boilerplate categories and sections with FOAM content.
+    Seed boilerplate categories and sections with organizational content.
 
     Creates categories for organizational capacity, programs, evaluation, etc.,
     with realistic boilerplate content.
@@ -167,16 +167,16 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
     categories_data = [
         {
             "name": "Organizational Capacity",
-            "description": "Content describing FOAM's organizational structure and capacity",
+            "description": "Content describing the organization's organizational structure and capacity",
             "order": 1,
             "sections": [
                 {
                     "title": "Organizational Mission & History",
                     "content": """
-                    FOAM is a 501(c)(3) nonprofit organization established in 2017,
+                    The organization is a 501(c)(3) nonprofit organization established in 2017,
                     dedicated to strengthening families and communities by empowering fathers to be actively
                     engaged parents and positive role models. Located in East Baton Rouge Parish, Louisiana,
-                    FOAM serves 140 fathers and approximately 210 children annually through evidence-based
+                    The organization serves 140 fathers and approximately 210 children annually through evidence-based
                     and culturally responsive programming.
 
                     Our mission is to create systemic change by promoting responsible fatherhood, supporting
@@ -190,7 +190,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 {
                     "title": "Organizational Structure & Staffing",
                     "content": """
-                    FOAM operates with a lean, mission-driven organizational structure. Our leadership team
+                    The organization operates with a lean, mission-driven organizational structure. Our leadership team
                     includes a Executive Director with over 15 years of nonprofit management experience, a
                     Program Director with expertise in fatherhood programming, and support staff dedicated
                     to administrative operations and evaluation.
@@ -206,7 +206,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 {
                     "title": "Facilities & Infrastructure",
                     "content": """
-                    FOAM maintains a central office and program delivery space located in East Baton Rouge Parish,
+                    The organization maintains a central office and program delivery space located in East Baton Rouge Parish,
                     equipped with technology infrastructure for virtual programming, case management systems,
                     and secure data management. Our facilities comply with ADA accessibility standards and provide
                     a welcoming, family-friendly environment.
@@ -223,7 +223,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
         },
         {
             "name": "Program Design & Implementation",
-            "description": "Content describing FOAM's evidence-based programs",
+            "description": "Content describing the organization's evidence-based programs",
             "order": 2,
             "sections": [
                 {
@@ -281,7 +281,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 {
                     "title": "Louisiana Barracks Program",
                     "content": """
-                    The Louisiana Barracks Program is a specialized adaptation of FOAM's core curriculum for military
+                    The Louisiana Barracks Program is a specialized adaptation of the organization's core curriculum for military
                     families stationed at local installations. The program addresses unique challenges faced by military
                     fathers, including deployment-related separation, military culture integration, and family
                     resilience.
@@ -300,13 +300,13 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
         },
         {
             "name": "Evaluation & Outcomes",
-            "description": "Content describing FOAM's evaluation methodologies and outcomes",
+            "description": "Content describing the organization's evaluation methodologies and outcomes",
             "order": 3,
             "sections": [
                 {
                     "title": "Evaluation Framework & Methodology",
                     "content": """
-                    FOAM utilizes a comprehensive, mixed-methods evaluation framework informed by the outcomes model
+                    The organization utilizes a comprehensive, mixed-methods evaluation framework informed by the outcomes model
                     for responsible fatherhood and best practices in nonprofit evaluation. Our evaluation approach
                     includes:
 
@@ -332,7 +332,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 {
                     "title": "Key Outcome Indicators",
                     "content": """
-                    FOAM tracks the following key outcome indicators:
+                    The organization tracks the following key outcome indicators:
 
                     Primary Outcomes:
                     - 75%+ of participants demonstrate increased parenting knowledge and skills (pre/post assessment)
@@ -357,7 +357,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 {
                     "title": "Data Collection & Management",
                     "content": """
-                    FOAM maintains secure data collection and management systems compliant with HIPAA, FERPA, and
+                    The organization maintains secure data collection and management systems compliant with HIPAA, FERPA, and
                     other applicable privacy standards. Data is collected through:
 
                     - EmpowerDB: Comprehensive case management and participant tracking system
@@ -384,7 +384,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 {
                     "title": "Financial Management & Compliance",
                     "content": """
-                    FOAM maintains strong financial management practices and operational compliance:
+                    The organization maintains strong financial management practices and operational compliance:
 
                     - Annual independent audit by CPA firm specializing in nonprofits
                     - Board Finance Committee oversight of budgets and expenditures
@@ -402,7 +402,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 {
                     "title": "Sustainability & Diversification Strategy",
                     "content": """
-                    FOAM's sustainability strategy includes diverse revenue streams to reduce dependence on any
+                    the organization's sustainability strategy includes diverse revenue streams to reduce dependence on any
                     single funding source:
 
                     Current Funding (FY2023):
@@ -427,7 +427,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 {
                     "title": "Cultural Competence & Equity",
                     "content": """
-                    FOAM is deeply committed to cultural competence and advancing racial and ethnic equity:
+                    The organization is deeply committed to cultural competence and advancing racial and ethnic equity:
 
                     - 90% of our staff identify as African American or Latino/Hispanic
                     - All programs explicitly incorporate cultural identity, historical context, and strengths-based approaches
@@ -466,7 +466,7 @@ async def seed_boilerplate_categories_and_sections(session: AsyncSession) -> Non
                 program_area=sec_data.get("program_area"),
                 evidence_type=sec_data.get("evidence_type"),
                 is_active=True,
-                created_by="system@foamgrants.org",
+                created_by="system@grantengine.org",
             )
             session.add(section)
 
@@ -489,7 +489,7 @@ async def seed_default_users(session: AsyncSession) -> None:
     from sqlalchemy import select
 
     existing = await session.execute(
-        select(User).where(User.email == "admin@foamgrants.org")
+        select(User).where(User.email == "admin@grantengine.org")
     )
     if existing.scalar_one_or_none():
         logger.info("Admin user already exists, skipping user seeding")
@@ -498,8 +498,8 @@ async def seed_default_users(session: AsyncSession) -> None:
     # Create admin user
     admin_user = User(
         id=uuid4(),
-        email="admin@foamgrants.org",
-        name="FOAM Administrator",
+        email="admin@grantengine.org",
+        name="Admin",
         hashed_password=pwd_context.hash("ChangeMe123!"),  # Should be changed on first login
         role=UserRoleEnum.ADMIN,
         is_active=True,
@@ -509,7 +509,7 @@ async def seed_default_users(session: AsyncSession) -> None:
     # Create sample grant manager user
     manager_user = User(
         id=uuid4(),
-        email="manager@foamgrants.org",
+        email="manager@grantengine.org",
         name="Grant Manager",
         hashed_password=pwd_context.hash("ChangeMe123!"),  # Should be changed on first login
         role=UserRoleEnum.GRANT_MANAGER,
@@ -520,7 +520,7 @@ async def seed_default_users(session: AsyncSession) -> None:
     # Create sample reviewer user
     reviewer_user = User(
         id=uuid4(),
-        email="reviewer@foamgrants.org",
+        email="reviewer@grantengine.org",
         name="Grant Reviewer",
         hashed_password=pwd_context.hash("ChangeMe123!"),  # Should be changed on first login
         role=UserRoleEnum.REVIEWER,
@@ -545,9 +545,9 @@ async def main():
         print("DATABASE SEEDING COMPLETE")
         print("=" * 80)
         print("\nDefault Users Created:")
-        print("  Email: admin@foamgrants.org | Role: Admin")
-        print("  Email: manager@foamgrants.org | Role: Grant Manager")
-        print("  Email: reviewer@foamgrants.org | Role: Reviewer")
+        print("  Email: admin@grantengine.org | Role: Admin")
+        print("  Email: manager@grantengine.org | Role: Grant Manager")
+        print("  Email: reviewer@grantengine.org | Role: Reviewer")
         print("\n⚠️  WARNING: Change default passwords before production use!")
         print("=" * 80 + "\n")
 

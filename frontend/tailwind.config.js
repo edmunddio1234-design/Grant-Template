@@ -6,12 +6,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        'foam-primary': '#0F2C5C',
-        'foam-secondary': '#1E4D8C',
-        'foam-accent': '#3B82F6',
-        'foam-green': '#22C55E',
-        'foam-amber': '#F59E0B',
-        'foam-red': '#EF4444'
+        'brand-primary': '#0F2C5C',
+        'brand-secondary': '#1E4D8C',
+        'brand-accent': '#3B82F6',
+        'brand-green': '#22C55E',
+        'brand-amber': '#F59E0B',
+        'brand-red': '#EF4444'
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif']

@@ -69,14 +69,14 @@ export default function Sidebar({ open, setOpen }) {
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="w-48 h-full bg-foam-primary text-white shadow-xl overflow-y-auto flex flex-col">
+        <div className="w-48 h-full bg-brand-primary text-white shadow-xl overflow-y-auto flex flex-col">
           <div className="p-4 flex-1">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <span className="font-bold text-foam-primary text-sm">F</span>
+                <span className="font-bold text-brand-primary text-sm">G</span>
               </div>
               <div>
-                <h1 className="text-base font-bold leading-tight">FOAM</h1>
+                <h1 className="text-base font-bold leading-tight">GAE</h1>
                 <p className="text-[10px] text-blue-100">Grant Engine</p>
               </div>
             </div>
@@ -109,13 +109,13 @@ export default function Sidebar({ open, setOpen }) {
                       'w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left text-xs',
                       active
                         ? 'bg-blue-600 text-white'
-                        : 'text-blue-100 hover:bg-foam-secondary'
+                        : 'text-blue-100 hover:bg-brand-secondary'
                     )}
                   >
                     <Icon size={16} />
                     <span className="flex-1 font-medium">{module.name}</span>
                     {pendingCount > 0 && (
-                      <span className="bg-foam-amber text-foam-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      <span className="bg-brand-amber text-brand-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                         {pendingCount}
                       </span>
                     )}

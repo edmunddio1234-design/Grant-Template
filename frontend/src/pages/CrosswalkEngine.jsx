@@ -18,7 +18,7 @@ const mockMappings = [
     boilerplateMatches: ['Organizational History and Mission', 'Project Family Build Program Overview'],
     riskLevel: 'green',
     alignmentScore: 92,
-    notes: 'Strong alignment with FOAM mission and programs',
+    notes: 'Strong alignment with organizational mission and programs',
     status: 'approved'
   },
   {
@@ -36,7 +36,7 @@ const mockMappings = [
     boilerplateMatches: ['Organizational Capacity and Infrastructure'],
     riskLevel: 'green',
     alignmentScore: 88,
-    notes: 'FOAM infrastructure documented and verified',
+    notes: 'Infrastructure documented and verified',
     status: 'approved'
   },
   {
@@ -211,7 +211,7 @@ export default function CrosswalkEngine() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="section-title">Crosswalk Engine</h2>
-          <p className="text-gray-600 mt-2">Map RFP requirements to FOAM boilerplate content</p>
+          <p className="text-gray-600 mt-2">Map RFP requirements to your boilerplate content</p>
         </div>
         <button onClick={handleExport} className="btn-primary">
           <Download size={20} />
@@ -264,7 +264,7 @@ export default function CrosswalkEngine() {
         <div className="card">
           <div className="p-6">
             <p className="text-sm font-medium text-gray-600">Average Score</p>
-            <p className="text-3xl font-bold text-foam-primary mt-2">{stats.avgScore}%</p>
+            <p className="text-3xl font-bold text-brand-primary mt-2">{stats.avgScore}%</p>
             <p className="text-xs text-gray-500 mt-2">Across all mappings</p>
           </div>
         </div>
@@ -306,7 +306,7 @@ export default function CrosswalkEngine() {
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700">Alignment Score</span>
-                  <span className="text-lg font-bold text-foam-primary">{mapping.alignmentScore}%</span>
+                  <span className="text-lg font-bold text-brand-primary">{mapping.alignmentScore}%</span>
                 </div>
                 <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
                   <div

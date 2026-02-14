@@ -35,7 +35,7 @@ export default function FileUpload({
         className={clsx(
           'border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer',
           isDragActive
-            ? 'border-foam-primary bg-blue-50'
+            ? 'border-brand-primary bg-blue-50'
             : 'border-gray-300 bg-white hover:border-gray-400',
           (disabled || loading) && 'opacity-50 cursor-not-allowed'
         )}
@@ -44,7 +44,7 @@ export default function FileUpload({
 
         <div className="flex flex-col items-center gap-3">
           {loading ? (
-            <Loader size={32} className="text-foam-primary animate-spin" />
+            <Loader size={32} className="text-brand-primary animate-spin" />
           ) : (
             <Upload size={32} className="text-gray-400" />
           )}

@@ -1,6 +1,6 @@
 # Grant Alignment Engine - Backend API
 
-A production-quality FastAPI backend for the Grant Alignment Engine, providing AI-powered grant alignment and compliance analysis for FOAM.
+A production-quality FastAPI backend for the Grant Alignment Engine, providing AI-powered grant alignment and compliance analysis for the organization.
 
 ## Overview
 
@@ -69,7 +69,7 @@ cp .env.example .env
 ### 3. Initialize Database
 
 ```bash
-# Create tables and seed with FOAM institutional data
+# Create tables and seed with organizational institutional data
 python seed_data.py
 ```
 
@@ -273,7 +273,7 @@ For production deployment:
 
 ## Seed Data
 
-The `seed_data.py` script initializes the database with FOAM institutional data:
+The `seed_data.py` script initializes the database with organizational institutional data:
 
 ```bash
 python seed_data.py
@@ -281,14 +281,14 @@ python seed_data.py
 
 This creates:
 - 4 boilerplate categories with 15+ sections
-- FOAM organizational and program content
+- Organizational and program content
 - Tags for programs, funding types, evidence, outcomes
 - Default admin, manager, and reviewer users
 
 Default user credentials (CHANGE IMMEDIATELY IN PRODUCTION):
-- admin@foamgrants.org
-- manager@foamgrants.org
-- reviewer@foamgrants.org
+- admin@grantengine.org
+- manager@grantengine.org
+- reviewer@grantengine.org
 - Password: ChangeMe123!
 
 ## Testing
@@ -338,7 +338,7 @@ mypy .
 
 ```bash
 # Check database is running
-psql -h localhost -U foam_user -d foam_grants
+psql -h localhost -U gae_user -d gae_grants
 
 # Reset database (development only)
 python -c "
@@ -400,9 +400,9 @@ All API responses follow a consistent format:
 }
 ```
 
-## FOAM Organization Info
+## Organization Info
 
-**Organization**: FOAM (501(c)(3))
+**Organization**: the organization (501(c)(3))
 **Location**: East Baton Rouge Parish, Louisiana
 **Founded**: 2017
 **EIN**: 82-2374110
@@ -425,7 +425,7 @@ All API responses follow a consistent format:
 
 ## License
 
-Copyright FOAM. All rights reserved.
+Copyright Organization. All rights reserved.
 
 ## Contact
 

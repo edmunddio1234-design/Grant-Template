@@ -80,9 +80,9 @@ export default function DataTable({
       return <ChevronUp size={16} className="text-gray-300" />
     }
     return sortConfig.direction === 'asc' ? (
-      <ChevronUp size={16} className="text-foam-primary" />
+      <ChevronUp size={16} className="text-brand-primary" />
     ) : (
-      <ChevronDown size={16} className="text-foam-primary" />
+      <ChevronDown size={16} className="text-brand-primary" />
     )
   }
 
@@ -211,7 +211,7 @@ export default function DataTable({
                   className={clsx(
                     'btn-sm rounded-lg px-3 py-2 font-medium transition-colors',
                     pageNum === currentPage
-                      ? 'bg-foam-primary text-white'
+                      ? 'bg-brand-primary text-white'
                       : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                   )}
                 >

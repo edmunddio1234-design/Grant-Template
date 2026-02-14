@@ -1,7 +1,7 @@
 """
 Crosswalk Engine Service
 
-Core alignment engine that maps RFP requirements against FOAM boilerplate content.
+Core alignment engine that maps RFP requirements against organizational boilerplate content.
 Generates alignment scores, identifies gaps, and assigns risk levels.
 """
 
@@ -38,8 +38,8 @@ class RiskLevel(str, Enum):
     RED = "red"
 
 
-# FOAM-specific keyword mappings
-FOAM_KEYWORD_MAP = {
+# Keyword mappings for grant domain areas
+KEYWORD_MAP = {
     "reentry": [
         "Louisiana Barracks", "justice-involved", "recidivism", "DPS&C", "incarcerated",
         "reentry", "criminal justice", "formerly incarcerated", "post-incarceration"
@@ -77,10 +77,10 @@ FOAM_KEYWORD_MAP = {
 
 @dataclass
 class CrosswalkResult:
-    """Result of a single RFP requirement to FOAM capability alignment."""
+    """Result of a single RFP requirement to organizational capability alignment."""
     rfp_requirement: str
     rfp_section: str
-    foam_strength: str  # FOAM capability area
+    org_strength: str  # Organizational capability area
     boilerplate_section: str
     boilerplate_excerpt: str
     alignment_score: float  # 0-1
@@ -94,7 +94,7 @@ class CrosswalkResult:
 
 class CrosswalkEngine:
     """
-    Core alignment engine for mapping RFP requirements to FOAM capabilities.
+    Core alignment engine for mapping RFP requirements to organizational capabilities.
 
     Uses TF-IDF similarity, keyword matching, and program-specific logic to
     generate alignment scores and identify gaps.
@@ -147,7 +147,7 @@ class CrosswalkEngine:
 
     async def generate_crosswalk(self, parsed_rfp, boilerplate_sections: Optional[List[Dict]] = None) -> List[CrosswalkResult]:
         """
-        Generate a comprehensive crosswalk between RFP requirements and FOAM capabilities.
+        Generate a comprehensive crosswalk between RFP requirements and organizational capabilities.
 
         Args:
             parsed_rfp: ParsedRFP object from RFP parser
@@ -198,12 +198,12 @@ class CrosswalkEngine:
         results = []
         section_lower = rfp_section.name.lower()
 
-        # Map RFP section to FOAM keyword areas
+        # Map RFP section to organizational keyword areas
         matching_areas = self._identify_matching_areas(rfp_section.content)
 
-        for foam_area, strength in matching_areas.items():
+        for org_area, strength in matching_areas.items():
             # Get boilerplate content for this area
-            boilerplate = self._get_boilerplate_for_area(foam_area, boilerplate_sections)
+            boilerplate = self._get_boilerplate_for_area(org_area, boilerplate_sections)
 
             if boilerplate:
                 # Compute alignment
@@ -231,7 +231,7 @@ class CrosswalkEngine:
                     CrosswalkResult(
                         rfp_requirement=rfp_section.content[:200],
                         rfp_section=rfp_section.name,
-                        foam_strength=foam_area,
+                        org_strength=org_area,
                         boilerplate_section=boilerplate.get("name", ""),
                         boilerplate_excerpt=boilerplate["content"][:300],
                         alignment_score=alignment_score,
@@ -245,7 +245,7 @@ class CrosswalkEngine:
                 result = CrosswalkResult(
                     rfp_requirement=rfp_section.content[:200],
                     rfp_section=rfp_section.name,
-                    foam_strength=foam_area,
+                    org_strength=org_area,
                     boilerplate_section=boilerplate.get("name", ""),
                     boilerplate_excerpt=boilerplate["content"][:300],
                     alignment_score=alignment_score,
@@ -263,18 +263,18 @@ class CrosswalkEngine:
 
     def _identify_matching_areas(self, content: str) -> Dict[str, float]:
         """
-        Identify which FOAM keyword areas match the given content.
+        Identify which organizational keyword areas match the given content.
 
         Args:
             content: Text content to analyze
 
         Returns:
-            Dict mapping FOAM areas to strength scores (0-1)
+            Dict mapping organizational areas to strength scores (0-1)
         """
         matches = {}
         content_lower = content.lower()
 
-        for area, keywords in FOAM_KEYWORD_MAP.items():
+        for area, keywords in KEYWORD_MAP.items():
             # Count keyword matches
             match_count = sum(1 for keyword in keywords if keyword.lower() in content_lower)
 
@@ -285,12 +285,12 @@ class CrosswalkEngine:
 
         return matches
 
-    def _get_boilerplate_for_area(self, foam_area: str, boilerplate_sections: Optional[List[Dict]]) -> Optional[Dict]:
+    def _get_boilerplate_for_area(self, org_area: str, boilerplate_sections: Optional[List[Dict]]) -> Optional[Dict]:
         """
-        Retrieve boilerplate content for a specific FOAM area.
+        Retrieve boilerplate content for a specific organizational area.
 
         Args:
-            foam_area: FOAM area name
+            org_area: organizational area name
             boilerplate_sections: Optional list of boilerplate sections
 
         Returns:
@@ -299,21 +299,21 @@ class CrosswalkEngine:
         # Use provided boilerplate or default
         if boilerplate_sections:
             for section in boilerplate_sections:
-                if section.get("area") == foam_area or foam_area in section.get("tags", []):
+                if section.get("area") == org_area or org_area in section.get("tags", []):
                     return section
 
         # Fallback to default boilerplate
-        if foam_area in self.boilerplate_data:
-            content = self.boilerplate_data[foam_area]
+        if org_area in self.boilerplate_data:
+            content = self.boilerplate_data[org_area]
             if isinstance(content, str):
-                return {"name": foam_area, "content": content, "tags": [foam_area]}
+                return {"name": org_area, "content": content, "tags": [org_area]}
             elif isinstance(content, dict):
                 first_section = next(iter(content.values()), None)
                 if first_section:
                     return {
-                        "name": foam_area,
+                        "name": org_area,
                         "content": first_section,
-                        "tags": [foam_area]
+                        "tags": [org_area]
                     }
 
         return None
@@ -478,12 +478,12 @@ class CrosswalkEngine:
         elif result.alignment_level == AlignmentLevel.WEAK:
             recommendations.append("Develop custom content focusing on RFP requirements")
             recommendations.append(f"Reference boilerplate from '{result.boilerplate_section}' for context")
-            recommendations.append("Emphasize unique FOAM value proposition")
+            recommendations.append("Emphasize unique organizational value proposition")
 
         else:  # NONE
             recommendations.append("No boilerplate available for this requirement")
             recommendations.append("Develop entirely custom narrative")
-            recommendations.append("Consider whether FOAM programs address this requirement")
+            recommendations.append("Consider whether organizational programs address this requirement")
 
         if result.gap_flag:
             recommendations.append("FLAG: Significant gap identified; review for risk implications")
@@ -492,7 +492,7 @@ class CrosswalkEngine:
 
     def _default_boilerplate(self) -> Dict:
         """
-        Return default boilerplate content for all FOAM areas.
+        Return default boilerplate content for all organizational areas.
 
         Returns:
             Dictionary of default boilerplate by area
@@ -501,7 +501,7 @@ class CrosswalkEngine:
             "reentry": {
                 "name": "Louisiana Barracks Program",
                 "content": (
-                    "FOAM's Louisiana Barracks Program provides comprehensive reentry and workforce "
+                    "the organization's Louisiana Barracks Program provides comprehensive reentry and workforce "
                     "development services for justice-involved individuals in East Baton Rouge Parish. "
                     "Our program combines case management, job readiness training, and peer mentorship "
                     "to support successful reintegration and economic mobility. Services are tailored "
@@ -512,7 +512,7 @@ class CrosswalkEngine:
             "fatherhood": {
                 "name": "Responsible Fatherhood Classes",
                 "content": (
-                    "FOAM offers comprehensive fatherhood education through our 14-lesson NPCL curriculum, "
+                    "The organization offers comprehensive fatherhood education through our 14-lesson NPCL curriculum, "
                     "designed to strengthen father-child relationships and promote co-parenting skills. "
                     "Classes cover communication, emotional intelligence, financial management, and "
                     "parenting best practices. Participants engage in interactive activities and peer support "
@@ -524,7 +524,7 @@ class CrosswalkEngine:
                 "name": "Project Family Build",
                 "content": (
                     "Project Family Build provides wraparound case management services that coordinate "
-                    "support across FOAM programs and community partners. Our individualized Plans of Care "
+                    "support across organizational programs and community partners. Our individualized Plans of Care "
                     "address family needs holistically, removing barriers to engagement and achieving "
                     "measurable outcomes in child welfare prevention, economic stability, and family "
                     "preservation. Services are delivered with cultural competency and trauma-informed practice."
@@ -534,7 +534,7 @@ class CrosswalkEngine:
             "prevention": {
                 "name": "Child Welfare Prevention",
                 "content": (
-                    "FOAM's prevention services strengthen protective factors in families and communities, "
+                    "the organization's prevention services strengthen protective factors in families and communities, "
                     "reducing risk for child abuse and neglect. Through family support, parenting education, "
                     "and community engagement, we build resilience and address root causes of family stress. "
                     "Services target vulnerable populations and employ evidence-based interventions aligned "
@@ -545,7 +545,7 @@ class CrosswalkEngine:
             "financial_literacy": {
                 "name": "Financial Literacy and Economic Mobility",
                 "content": (
-                    "FOAM integrates financial literacy across all programs, teaching budgeting, banking, "
+                    "The organization integrates financial literacy across all programs, teaching budgeting, banking, "
                     "credit management, and financial planning. Our approach empowers individuals to achieve "
                     "economic stability and build assets for long-term success. Curriculum is practical, "
                     "culturally relevant, and outcomes-focused, with tracked improvements in financial knowledge "
@@ -556,7 +556,7 @@ class CrosswalkEngine:
             "celebration_events": {
                 "name": "Celebration of Fatherhood Events",
                 "content": (
-                    "FOAM hosts quarterly Celebration of Fatherhood Events that bring together fathers, "
+                    "The organization hosts quarterly Celebration of Fatherhood Events that bring together fathers, "
                     "children, and families for bonding, celebration, and community. These events strengthen "
                     "engagement, build social capital, and demonstrate the value of active fatherhood. "
                     "Activities are designed to be inclusive, fun, and culturally affirming."

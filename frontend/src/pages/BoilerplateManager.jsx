@@ -11,7 +11,7 @@ const mockSections = [
     id: 1,
     title: 'Organizational History and Mission',
     category: 'Basic Info',
-    content: 'FOAM was founded in 2018 with the mission to strengthen fatherhood through mentorship, education, and community engagement.',
+    content: 'Our organization was founded with the mission to strengthen communities through mentorship, education, and engagement.',
     tags: ['org_narrative', 'core_mission'],
     program: 'All Programs',
     lastUpdated: '2024-02-10',
@@ -22,7 +22,7 @@ const mockSections = [
     id: 2,
     title: 'Project Family Build Program Overview',
     category: 'Program Specific',
-    content: 'Project Family Build is FOAM\'s flagship initiative designed to strengthen the father-child relationship through structured workshops and mentorship.',
+    content: 'Our flagship initiative is designed to strengthen families through structured workshops and mentorship programs.',
     tags: ['program_specific', 'family_services'],
     program: 'Project Family Build',
     lastUpdated: '2024-02-12',
@@ -44,7 +44,7 @@ const mockSections = [
     id: 4,
     title: 'Organizational Capacity and Infrastructure',
     category: 'Org Narrative',
-    content: 'FOAM maintains state-of-the-art facilities in Baton Rouge with capacity to serve 500+ participants annually.',
+    content: 'Our organization maintains dedicated facilities with capacity to serve 500+ participants annually.',
     tags: ['capacity', 'infrastructure'],
     program: 'All Programs',
     lastUpdated: '2024-02-05',
@@ -307,7 +307,7 @@ export default function BoilerplateManager() {
           </button>
           <button
             onClick={() => handleDeleteSection(row.id)}
-            className="p-1 hover:bg-gray-100 rounded transition-colors text-foam-red"
+            className="p-1 hover:bg-gray-100 rounded transition-colors text-brand-red"
             title="Delete"
           >
             <Trash2 size={18} />
@@ -533,7 +533,7 @@ export default function BoilerplateManager() {
                       <p className="font-medium text-gray-900">v{viewingHistory.version - i}</p>
                       <p className="text-xs text-gray-500">Updated {Math.floor(i * 1.5) || 'today'} days ago</p>
                     </div>
-                    <button className="text-sm text-foam-primary hover:underline">View Diff</button>
+                    <button className="text-sm text-brand-primary hover:underline">View Diff</button>
                   </div>
                 ))}
               </div>

@@ -189,7 +189,7 @@ export default function GapRiskDashboard() {
             <div>
               <p className="text-sm font-medium text-gray-600 mb-2">Overall Risk Score</p>
               <div className="flex items-baseline gap-4">
-                <p className="text-6xl font-bold text-foam-primary">{overallScore}</p>
+                <p className="text-6xl font-bold text-brand-primary">{overallScore}</p>
                 <p className="text-2xl text-gray-500">/100</p>
               </div>
               <p className="text-sm text-gray-600 mt-3">Lower score indicates higher risk</p>
@@ -331,7 +331,7 @@ export default function GapRiskDashboard() {
       <div className="card">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center gap-2">
-            <Zap size={20} className="text-foam-amber" />
+            <Zap size={20} className="text-brand-amber" />
             <h3 className="subsection-title">Prioritized Action Plan</h3>
           </div>
           <p className="text-sm text-gray-600 mt-1">Recommended steps to maximize grant competitiveness</p>
@@ -339,9 +339,9 @@ export default function GapRiskDashboard() {
         <div className="p-6">
           <div className="space-y-3">
             {recommendations.map((rec) => (
-              <div key={rec.priority} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-foam-primary transition-colors">
+              <div key={rec.priority} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-brand-primary transition-colors">
                 <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-foam-primary text-white font-bold text-sm">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-primary text-white font-bold text-sm">
                     {rec.priority}
                   </div>
                 </div>

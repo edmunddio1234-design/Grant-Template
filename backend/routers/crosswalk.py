@@ -170,7 +170,7 @@ async def generate_crosswalk(
         for requirement in requirements:
             req_text = f"{requirement.section_name}: {requirement.description}"
 
-            # Identify matching FOAM areas via the engine
+            # Identify matching organizational areas via the engine
             matching_areas = engine._identify_matching_areas(req_text)
 
             if matching_areas and sections:
@@ -180,8 +180,8 @@ async def generate_crosswalk(
                 best_level = AlignmentLevel.NONE
                 best_risk = RiskLevel.YELLOW
 
-                for foam_area, strength in matching_areas.items():
-                    bp_data = engine._get_boilerplate_for_area(foam_area, None)
+                for org_area, strength in matching_areas.items():
+                    bp_data = engine._get_boilerplate_for_area(org_area, None)
                     if bp_data:
                         similarity = engine._compute_similarity(req_text, bp_data["content"])
                         tag_match = engine._match_tags(req_text, bp_data.get("tags", []))
@@ -193,7 +193,7 @@ async def generate_crosswalk(
                             best_level = level
                             best_risk = risk
                             # Try to find matching ORM boilerplate
-                            best_bp = boilerplate_lookup.get(foam_area) or (sections[0] if sections else None)
+                            best_bp = boilerplate_lookup.get(org_area) or (sections[0] if sections else None)
 
                 if best_bp:
                     # Check for existing mapping

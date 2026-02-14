@@ -94,7 +94,7 @@ frontend/
 
 ## Color Scheme
 
-- **Primary**: #0F2C5C (FOAM Blue)
+- **Primary**: #0F2C5C (Primary Blue)
 - **Secondary**: #1E4D8C (Darker Blue)
 - **Accent**: #3B82F6 (Light Blue)
 - **Success**: #22C55E (Green)
@@ -186,4 +186,4 @@ All components accept props for customization and follow consistent styling patt
 
 ## License
 
-© 2024 FOAM. All rights reserved.
+© 2024 Organization. All rights reserved.

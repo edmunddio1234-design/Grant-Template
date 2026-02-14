@@ -53,105 +53,22 @@ class AIDraftService:
     and graceful fallback when AI is unavailable.
     """
 
-    # System prompt with comprehensive FOAM organizational knowledge
-    SYSTEM_PROMPT = """You are a Grant Alignment Architect for FOAM.
+    # Generic system prompt — org-specific content comes from boilerplate database
+    SYSTEM_PROMPT = """You are a Grant Alignment Architect.
 
-=== ORGANIZATION IDENTITY ===
-Name: FOAM
-Type: 501(c)(3) nonprofit, established 2017
-Location: East Baton Rouge Parish, Louisiana
-Service Area: Zip codes 70802, 70805, 70806, 70807, 70812
-Offices: Government Street HQ + 3255 Choctaw Drive satellite office
-Executive Director: Levar Robinson (10+ years experience)
-Mission: "To enhance Fathers and Father Figures which will ultimately strengthen families."
-Vision: "All Fathers and Father Figures are active positive role models with their children, families, and in the community."
-
-=== THREE-PART INTEGRATED PROGRAM MODEL ===
-These three components are separate but intertwined — they work holistically.
-
-1. Project Family Build
-   - Individualized Plans of Care for each father
-   - Minimum 5 case management sessions per father
-   - Six-phase onboarding (initial contact within 24 hours of referral)
-   - Barrier removal: employment, housing referrals, document recovery (birth certificates, SSN cards, IDs)
-   - Workforce development: resume building, interview coaching, job placement
-   - Emergency supports: rental/utility assistance, clothing, hygiene, childcare, transportation
-   - Mental health and emotional wellness referrals
-   - Follow-up check-ins at 30, 60, and 90 days after closure
-
-2. Responsible Fatherhood Classes (14-Lesson NPCL Curriculum)
-   - Delivered weekly on Tuesdays in community settings and correctional facilities
-   - Lessons cover: manhood, values, self-sufficiency, communication, stress management,
-     fatherhood discrimination, children's needs, building self-esteem, relationships,
-     conflict resolution, co-parenting/single fatherhood
-   - Evidence-based NPCL (National Partners for Community Leadership) curriculum
-   - Note: Use "Responsible Fatherhood Classes" in documents, NOT "NPCL" in body text
-
-3. Celebration of Fatherhood Events (Quarterly Bonding Events)
-   - 4 per year: Cooking with Dads, Father-Daughter Dance, quarterly workshops, signature events
-   - Reinforce engagement and family connection
-
-=== REENTRY & JUSTICE-INVOLVED FATHERS ===
-Louisiana Barracks Program:
-- 8-lesson reentry and workforce curriculum inside DPS&C facilities
-- Covers: job readiness, communication, financial decision-making, legal navigation, wellness
-- Fatherhood classes in Ascension Parish Jail, East Baton Rouge Jail, community settings
-
-=== TARGET POPULATION & OUTCOMES ===
-Targets: 140 fathers, ~210 children per grant year
-Outcome Goals:
-- 80% achieve a stability goal (employment, transportation, or documentation)
-- 75% show improvement on pre/post assessments
-- 70% complete full program
-
-=== KEY DATA — EAST BATON ROUGE PARISH ===
-Population: 453,022 | Child population: 101,169 (ages 0-17)
-Child poverty rate: 27% | Overall poverty rate: 18.56%
-Single-parent households: 44.67% | ALICE threshold: 55% of households
-Racial composition: 44.1% Black, 42.0% White, 6.6% Hispanic/Latino
-Among children: 53% Black, 30.6% White, 8.9% Hispanic
-Child Welfare (Region 2, FFY 2024): 6,562 reports of suspected abuse/neglect,
-2,656 investigations, 508 children in foster care (monthly avg)
-Neglect = 78% of substantiated maltreatment statewide
-
-=== PROTECTIVE FACTORS (Strengthening Families) ===
-1. Parental Resilience → Curriculum: stress management, emotional regulation
-2. Social Connections → Peer groups, bonding events, co-parenting skills
-3. Knowledge of Parenting & Child Development → 14-lesson curriculum
-4. Concrete Supports in Times of Need → Case management: employment, docs, resources
-5. Nurturing & Attachment → Quarterly bonding events
-6. Children's Social-Emotional Competence → Father modeling, family stability
-
-=== ORGANIZATIONAL CAPACITY ===
-Staff: Executive Director (10+ yrs), LCSW supervisor (25 yrs), 3 case managers (18+ yrs combined)
-Data Systems: EmpowerDB (case management), nFORM (federal reporting), SharePoint, QR-code attendance
-Finance: GAAP-aligned accounting with defined roles (Program Manager, Accountant, Treasurer/CFO, ED, Board)
-"Treasure Room" for donated goods at office locations
-
-=== KEY PARTNERSHIPS ===
-EnvisionBR, YWCA, DCFS, Office of the District Attorney, HOPE Ministries,
-Christian Outreach Center, East Baton Rouge School System, Capital Area United Way,
-Blue Cross Blue Shield Louisiana, Huey & Angelina Wilson Foundation, Lamar Family Foundation
-
-=== GRANT PORTFOLIO ===
-70 submissions (2023-2025), ~$5.7M requested, ~$670K awarded
-Key funders: Act 461 ($200K), Wilson Foundation ($100K+$50K), Mayor's NOFA ($49K),
-BCBSLA ($25K), Humana ($25K), Pennington ($20K), CAUW ($10K)
-IMPORTANT: FOAM no longer receives DCFS TANF funding — do NOT mention in sustainability plans.
+You help organizations prepare competitive grant applications by aligning their capabilities
+with funder requirements. Your knowledge about the specific organization comes from the
+boilerplate content library provided in each request context.
 
 === WRITING RULES ===
 1. Write in PROSE format — paragraph-by-paragraph, NOT bullet lists
-2. Use "Responsible Fatherhood Classes" (not "NPCL" in body text)
-3. Use "Latino" (not "Latine")
-4. Three components are "separate but intertwined"
-5. Always cite specific local EBR data with sources
-6. Connect every statement to FOAM capability or RFP requirement
-7. Include measurable outcomes: 80%/75%/70% goals
-8. Professional nonprofit grant language — formal, specific, outcome-focused
-9. When RFP data is provided, address EVERY requirement point directly
-10. When boilerplate content is provided, customize it to the funder — don't just copy it
-
-Never generate generic grant language. Never make unsupported claims. Never exceed word limits."""
+2. Professional nonprofit grant language — formal, specific, outcome-focused
+3. Connect every statement to organizational capability or RFP requirement
+4. Include measurable outcomes and specific program details from boilerplate
+5. When RFP data is provided, address EVERY requirement point directly
+6. When boilerplate content is provided, customize it to the funder — don't just copy it
+7. Cite specific data and metrics from the organization's boilerplate content
+8. Never generate generic grant language. Never make unsupported claims. Never exceed word limits."""
 
     def __init__(self, provider: AIProvider, api_key: str, model: str = None, max_retries: int = 3):
         """
@@ -225,7 +142,7 @@ Requirements:
 1. Provide 3-5 main headings/subsections
 2. Include bullet points for each subsection
 3. Ensure outline maps to RFP requirements
-4. Consider FOAM's programs and capabilities in each point
+4. Consider the organization's programs and capabilities in each point
 5. Keep the outline concise and actionable
 
 Format as a clear, hierarchical outline ready for writer reference."""
@@ -265,7 +182,7 @@ RFP REQUIREMENT:
 
 Task:
 1. Adapt the boilerplate language to directly address the RFP requirement
-2. Maintain FOAM's institutional voice and specific program details
+2. Maintain the organization's institutional voice and specific program details
 3. Add RFP-specific terminology and metrics
 4. Keep content concise and evidence-based
 5. Do not exceed 300 words
@@ -291,12 +208,12 @@ Provide the adapted text as a single coherent paragraph."""
             logger.error(f"Error generating insert block: {str(e)}")
             raise AIServiceError(f"Failed to generate insert block: {str(e)}")
 
-    async def generate_comparison_statement(self, foam_capability: str, rfp_requirement: str) -> str:
+    async def generate_comparison_statement(self, org_capability: str, rfp_requirement: str) -> str:
         """
-        Generate a statement comparing FOAM's capability to RFP requirement.
+        Generate a statement comparing the organization's capability to RFP requirement.
 
         Args:
-            foam_capability: Description of FOAM's capability
+            org_capability: Description of the organization's capability
             rfp_requirement: Description of RFP requirement
 
         Returns:
@@ -306,17 +223,17 @@ Provide the adapted text as a single coherent paragraph."""
             AIServiceError: If generation fails
         """
         try:
-            prompt = f"""Write a comparison statement showing how FOAM's capability aligns with an RFP requirement.
+            prompt = f"""Write a comparison statement showing how the organization's capability aligns with an RFP requirement.
 
-FOAM CAPABILITY:
-{foam_capability}
+ORGANIZATIONAL CAPABILITY:
+{org_capability}
 
 RFP REQUIREMENT:
 {rfp_requirement}
 
 Task:
 1. Show specific alignment between capability and requirement
-2. Highlight unique aspects of FOAM's approach
+2. Highlight unique aspects of the organization's approach
 3. Include relevant metrics or outcomes
 4. Use professional grant-writing language
 5. Keep to 2-3 sentences max
@@ -347,13 +264,13 @@ Write the comparison as a standalone statement ready for inclusion in a grant na
             AIServiceError: If generation fails
         """
         try:
-            prompt = f"""Write a brief justification for why FOAM's program aligns with an RFP requirement.
+            prompt = f"""Write a brief justification for why the organization's program aligns with an RFP requirement.
 
 RFP REQUIREMENT:
 {crosswalk_result.rfp_requirement}
 
-FOAM PROGRAM AREA:
-{crosswalk_result.foam_strength}
+ORGANIZATIONAL PROGRAM AREA:
+{crosswalk_result.org_strength}
 
 BOILERPLATE EXCERPT:
 {crosswalk_result.boilerplate_excerpt}
@@ -456,7 +373,7 @@ Suggested Content Blocks:
 
 Task:
 1. Write a strong opening paragraph (100-150 words)
-2. Establish context and FOAM's relevance
+2. Establish context and the organization's relevance
 3. Connect to RFP evaluation criteria
 4. Maintain professional grant-writing tone
 5. Leave room for detailed content development
@@ -595,7 +512,7 @@ Provide only the opening paragraph, ready for inclusion in a grant draft."""
 
     def _build_system_prompt(self) -> str:
         """
-        Get the system prompt for FOAM grant alignment context.
+        Get the system prompt for the organization grant alignment context.
 
         Returns:
             System prompt string

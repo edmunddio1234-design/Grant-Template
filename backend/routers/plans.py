@@ -2,7 +2,7 @@
 Grant Plan Generation Routes - Module 4
 
 Routes for generating, managing, and exporting grant plans for Project Family Build
-and other FOAM initiatives.
+and other grant initiatives.
 """
 
 import logging
@@ -156,7 +156,7 @@ async def generate_plan(
             logger.warning(f"No parsed requirements for RFP {rfp_id} — using default sections")
             default_sections = [
                 ("Executive Summary", "Provide a concise overview of the proposed project, including goals, target population, and expected outcomes."),
-                ("Organization Background", "Describe FOAM's mission, history, capacity, and relevant experience."),
+                ("Organization Background", "Describe the organization's mission, history, capacity, and relevant experience."),
                 ("Project Description", "Detail the proposed project activities, methodology, and implementation plan."),
                 ("Target Population", "Describe the population to be served, including demographics and needs assessment."),
                 ("Goals and Objectives", "List SMART goals and measurable objectives aligned with funder priorities."),

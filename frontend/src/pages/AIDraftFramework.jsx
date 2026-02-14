@@ -99,7 +99,7 @@ export default function AIDraftFramework() {
       const res = await apiClient.generateInsertBlock({
         plan_id: selectedPlan,
         section_id: sectionId,
-        context: `Generate a complete draft for the "${section?.title}" section of this grant application. Include specific details about FOAM's programs, capacity, and outcomes.`,
+        context: `Generate a complete draft for the "${section?.title}" section of this grant application. Include specific details about the organization's programs, capacity, and outcomes.`,
         style: 'formal',
         length: 'long'
       })
@@ -204,7 +204,7 @@ export default function AIDraftFramework() {
           ) : (
             <div className="text-sm text-gray-600">
               <p className="font-medium text-gray-900">No plans found</p>
-              <p className="mt-1">Create a plan from the <a href="/plan" className="text-foam-primary underline">Grant Plan Generator</a> first, then return here to generate a draft.</p>
+              <p className="mt-1">Create a plan from the <a href="/plan" className="text-brand-primary underline">Grant Plan Generator</a> first, then return here to generate a draft.</p>
             </div>
           )}
         </div>
@@ -224,7 +224,7 @@ export default function AIDraftFramework() {
       {/* Loading State */}
       {isGenerating && (
         <div className="text-center py-16">
-          <Loader2 size={48} className="mx-auto text-foam-primary mb-4 animate-spin" />
+          <Loader2 size={48} className="mx-auto text-brand-primary mb-4 animate-spin" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Generating Draft for {currentPlanName}</h3>
           <p className="text-gray-600">AI is writing content for each section. This may take a moment...</p>
         </div>
@@ -339,13 +339,13 @@ export default function AIDraftFramework() {
                           <textarea
                             value={editContent}
                             onChange={(e) => setEditContent(e.target.value)}
-                            className="w-full h-64 p-4 border border-gray-300 rounded-lg text-sm leading-relaxed focus:ring-2 focus:ring-foam-primary focus:border-foam-primary resize-y"
+                            className="w-full h-64 p-4 border border-gray-300 rounded-lg text-sm leading-relaxed focus:ring-2 focus:ring-brand-primary focus:border-brand-primary resize-y"
                           />
                           <p className="text-xs text-gray-500">{editContent.split(/\s+/).filter(Boolean).length} words</p>
                         </div>
                       ) : isRegenerating ? (
                         <div className="flex items-center justify-center py-12">
-                          <Loader2 size={32} className="text-foam-primary animate-spin" />
+                          <Loader2 size={32} className="text-brand-primary animate-spin" />
                           <span className="ml-3 text-gray-600">Regenerating content...</span>
                         </div>
                       ) : section.content ? (

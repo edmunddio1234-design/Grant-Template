@@ -1,6 +1,6 @@
 # Grant Alignment Engine (GAE)
 
-A structured grant preparation application for **FOAM** that analyzes uploaded RFPs, maps funder requirements against FOAM's institutional capabilities, and produces compliance-aligned grant frameworks.
+A structured grant preparation application for the **organization** that analyzes uploaded RFPs, maps funder requirements against the organization's institutional capabilities, and produces compliance-aligned grant frameworks.
 
 This is not a writing assistant. This is a **grant alignment and structuring engine**.
 
@@ -8,12 +8,12 @@ This is not a writing assistant. This is a **grant alignment and structuring eng
 
 ## What It Does
 
-1. **Boilerplate Management** — Central database of FOAM's institutional language, organized by program, evidence type, and funding area, with version control and change tracking.
+1. **Boilerplate Management**—Central database of organizational's institutional language, organized by program, evidence type, and funding area, with version control and change tracking.
 2. **RFP Parsing** — Upload a PDF or DOCX RFP and automatically extract required sections, scoring rubrics, eligibility criteria, word limits, and formatting rules.
-3. **Crosswalk Mapping** — Side-by-side alignment of what the funder wants vs. what FOAM can deliver, with gap flags and risk levels.
-4. **Grant Plan Generation** — Structured proposal outline with word count targets, suggested FOAM language blocks, compliance checklists, and scoring indicators.
+3. **Crosswalk Mapping** — Side-by-side alignment of what the funder wants vs. what the organization can deliver, with gap flags and risk levels.
+4. **Grant Plan Generation** — Structured proposal outline with word count targets, suggested organizational language blocks, compliance checklists, and scoring indicators.
 5. **Gap & Risk Dashboard** — Visual dashboard flagging missing metrics, weak alignment, outdated data, missing partnerships, and evaluation weaknesses.
-6. **AI Draft Framework** — Structured section outlines and recommended insert blocks (not full narrative writing), anchored in FOAM strengths and RFP language.
+6. **AI Draft Framework** — Structured section outlines and recommended insert blocks (not full narrative writing), anchored in the organization''s strengths and RFP language.
 
 ---
 
@@ -37,7 +37,7 @@ Grant-Template/
 ├── .env.example                # Environment config template
 ├── database/
 │   ├── schema.sql              # 13 tables, indexes, views
-│   └── seed.sql                # Pre-loaded FOAM institutional data
+│   └── seed.sql                # Pre-loaded organizational institutional data
 ├── backend/
 │   ├── main.py                 # FastAPI application
 │   ├── models.py               # SQLAlchemy ORM models
@@ -104,7 +104,7 @@ Services start at:
 cd backend
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-python seed_data.py    # Initialize database with FOAM data
+python seed_data.py    # Initialize database with organizational data
 uvicorn main:app --reload
 ```
 
@@ -117,9 +117,9 @@ npm run dev
 
 ---
 
-## FOAM Data Pre-loaded
+## Organization Data Pre-loaded
 
-The database ships with real FOAM institutional content:
+The database ships with real organizational institutional content:
 
 - **Organization:** Legal name, EIN, UEI, mission, vision, core values
 - **Programs:** Project Family Build, Responsible Fatherhood Classes, Celebration of Fatherhood Events, Louisiana Barracks Program
@@ -158,4 +158,4 @@ Full interactive docs at `/docs` when running.
 
 ## License
 
-Private — FOAM
+Private — Organization

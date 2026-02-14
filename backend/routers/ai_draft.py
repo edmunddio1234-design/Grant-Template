@@ -275,7 +275,7 @@ Plan: {plan.title}
 Requirements:
 1. Write approximately {target_words} words
 2. Use {style} writing style
-3. Focus on FOAM's programs, capacity, and outcomes
+3. Focus on the organization's programs, capacity, and outcomes
 4. Address the specific context provided
 5. Use professional grant-writing language
 6. Include specific metrics and program details where relevant
@@ -389,7 +389,7 @@ Grant Plan: {plan.title}
 
 Requirements:
 1. Show specific alignment and differences between the two items
-2. Connect to FOAM's mission and programs
+2. Connect to the organization's mission and programs
 3. Include relevant metrics or outcomes where applicable
 4. Write 3-5 sentences in professional grant language
 5. Provide actionable recommendations
@@ -487,7 +487,7 @@ EXISTING BOILERPLATE CONTENT:
 Grant Plan: {plan.title}
 
 Task:
-1. Explain how FOAM's existing content addresses the RFP requirement
+1. Explain how the organization's existing content addresses the RFP requirement
 2. Identify specific strengths in the alignment
 3. Note any gaps and suggest how to address them
 4. Provide a confidence/alignment score assessment
@@ -734,7 +734,7 @@ YOU MUST directly address every point in this requirement description.
 
                     if boilerplate_context:
                         prompt += f"""
-=== FOAM'S BOILERPLATE LIBRARY (reference for FOAM-specific details) ===
+=== BOILERPLATE LIBRARY (reference for organization-specific details) ===
 {boilerplate_context[:2000]}
 """
 
@@ -761,7 +761,7 @@ YOU MUST directly address every point in this requirement description.
 Target Length: {section.word_limit or 500} words
 Write the actual grant narrative in prose format (paragraphs, not bullet points).
 Use professional grant-writing language.
-Include specific FOAM program names, real metrics, and concrete details.
+Include specific program names, real metrics, and concrete details from the boilerplate.
 If boilerplate content was provided above, customize it to address the funder's specific requirements.
 If funder requirements were provided, make sure EVERY point is addressed.
 
@@ -910,7 +910,7 @@ def _fill_placeholder_framework(section_framework, section, include_outlines, in
     section_framework["customization_notes"] = [
         "Tailor to Project Family Build's specific context",
         "Add organization-specific data and outcomes",
-        "Include references to FOAM's mission",
+        "Include references to the organization's mission",
     ]
     section_framework["source"] = "placeholder"
 
@@ -994,7 +994,7 @@ async def test_ai_connection() -> Dict[str, Any]:
 
     try:
         response = await ai_svc._call_api([
-            {"role": "user", "content": "Respond with exactly: FOAM AI OK"}
+            {"role": "user", "content": "Respond with exactly: GAE AI OK"}
         ], max_tokens=20)
         return {
             "success": True,

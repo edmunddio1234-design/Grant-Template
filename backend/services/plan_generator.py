@@ -301,7 +301,7 @@ class PlanGeneratorService:
 
         # Add section-specific suggestions
         if "need" in section.title.lower():
-            suggestions.append("Open with FOAM target population context (140 fathers, ~210 children)")
+            suggestions.append("Open with organizational target population context (140 fathers, ~210 children)")
             suggestions.append("Reference East Baton Rouge Parish demographics and needs data")
 
         elif "organizational" in section.title.lower():
@@ -310,7 +310,7 @@ class PlanGeneratorService:
             suggestions.append("Include staff qualifications and organizational structure")
 
         elif "design" in section.title.lower():
-            suggestions.append("Describe three-part FOAM model: Project Family Build, Responsible Fatherhood Classes, Celebration events")
+            suggestions.append("Describe three-part organizational model: Project Family Build, Responsible Fatherhood Classes, Celebration events")
             suggestions.append("Include evidence-based practice references (NPCL curriculum, wraparound model)")
             suggestions.append("Detail target population and service delivery approach")
 
@@ -359,13 +359,13 @@ class PlanGeneratorService:
             if related:
                 result = related[0]
                 if result.alignment_level.value == "strong":
-                    notes += " - Strong FOAM alignment"
+                    notes += " - Strong organizational alignment"
                 elif result.alignment_level.value == "partial":
                     status = "partial"
-                    notes += " - Partial FOAM alignment; requires customization"
+                    notes += " - Partial organizational alignment; requires customization"
                 else:
                     status = "unmet"
-                    notes += " - No FOAM alignment; custom content needed"
+                    notes += " - No organizational alignment; custom content needed"
 
             checklist.append(ComplianceItem(
                 requirement=f"Complete {section.name}",
@@ -387,7 +387,7 @@ class PlanGeneratorService:
             checklist.append(ComplianceItem(
                 requirement=f"Eligibility: {elig}",
                 status="met",
-                notes="FOAM meets this requirement"
+                notes="The organization meets this requirement"
             ))
 
         # Check required attachments

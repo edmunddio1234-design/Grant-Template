@@ -94,7 +94,7 @@ def create_app() -> FastAPI:
     if settings.is_production():
         app.add_middleware(
             TrustedHostMiddleware,
-            allowed_hosts=["*.foamgrants.org", "*.onrender.com"],
+            allowed_hosts=["*.grantengine.org", "*.onrender.com"],
         )
 
     # Setup upload directory

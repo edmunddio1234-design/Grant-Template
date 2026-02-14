@@ -44,8 +44,8 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo / Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-foam-primary rounded-2xl mb-4">
-            <span className="text-white font-bold text-2xl">FM</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-primary rounded-2xl mb-4">
+            <span className="text-white font-bold text-2xl">GA</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Grant Alignment Engine</h1>
           <p className="text-gray-500 mt-2">Sign in to manage your grant pipeline</p>
@@ -66,10 +66,10 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@foamgrants.org"
+                placeholder="you@yourorg.org"
                 required
                 autoFocus
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-foam-primary focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
               />
             </div>
 
@@ -82,7 +82,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-foam-primary focus:border-transparent pr-10"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent pr-10"
                 />
                 <button
                   type="button"
@@ -97,7 +97,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading || !email || !password}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-foam-primary text-white font-semibold rounded-lg hover:bg-foam-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
@@ -111,12 +111,12 @@ export default function Login() {
           <div className="mt-6 pt-6 border-t border-gray-100 text-center space-y-3">
             <Link
               to="/register"
-              className="inline-flex items-center gap-1 text-sm text-foam-primary hover:underline font-medium"
+              className="inline-flex items-center gap-1 text-sm text-brand-primary hover:underline font-medium"
             >
               Don't have an account? Create one
             </Link>
             <p className="text-xs text-gray-400">
-              FOAM Grant Management System
+              Grant Alignment Engine
             </p>
           </div>
         </div>

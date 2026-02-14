@@ -52,7 +52,7 @@ class GapAnalysis:
 
 class GapAnalyzerService:
     """
-    Service for analyzing RFP-to-FOAM alignment gaps and generating insights.
+    Service for analyzing RFP-to-organizational alignment gaps and generating insights.
 
     Categorizes gaps by type, calculates severity/risk, and generates
     prioritized recommendations for addressing weaknesses.
@@ -181,8 +181,8 @@ class GapAnalyzerService:
             if result.alignment_level.value == "none":
                 gaps["match"].append({
                     "section": result.rfp_section,
-                    "foam_area": result.foam_strength,
-                    "gap": f"No FOAM capability match for {result.rfp_section}"
+                    "org_area": result.org_strength,
+                    "gap": f"No organizational capability match for {result.rfp_section}"
                 })
 
         logger.debug(f"Categorized gaps: {len(gaps['alignment'])} alignment, {len(gaps['match'])} match gaps")
@@ -325,7 +325,7 @@ class GapAnalyzerService:
 
     def _identify_weak_alignments(self, crosswalk_results: List) -> List[str]:
         """
-        Identify sections with weak alignment to FOAM capabilities.
+        Identify sections with weak alignment to organizational capabilities.
 
         Args:
             crosswalk_results: List of CrosswalkResult objects
@@ -402,7 +402,7 @@ class GapAnalyzerService:
                 category="alignment",
                 description=gap["gap"],
                 severity=GapSeverity.RED,
-                recommendation="Develop custom content for this section or reconsider FOAM program fit",
+                recommendation="Develop custom content for this section or reconsider organizational program fit",
                 priority=priority,
                 affected_section=gap["section"]
             ))
@@ -414,7 +414,7 @@ class GapAnalyzerService:
                 category="match",
                 description=gap["gap"],
                 severity=GapSeverity.YELLOW,
-                recommendation=f"Explore connections to {gap['foam_area']} or identify new capability areas",
+                recommendation=f"Explore connections to {gap['org_area']} or identify new capability areas",
                 priority=priority,
                 affected_section=gap["section"]
             ))

@@ -9,9 +9,9 @@ import { apiClient } from '../api/client'
 
 const mockDashboardData = {
   stats: [
-    { label: 'Total Boilerplate Sections', value: 47, icon: Target, color: 'bg-blue-50 text-foam-primary' },
-    { label: 'Active RFPs', value: 3, icon: FileText, color: 'bg-green-50 text-foam-green' },
-    { label: 'Pending Crosswalks', value: 2, icon: TrendingUp, color: 'bg-amber-50 text-foam-amber' },
+    { label: 'Total Boilerplate Sections', value: 47, icon: Target, color: 'bg-blue-50 text-brand-primary' },
+    { label: 'Active RFPs', value: 3, icon: FileText, color: 'bg-green-50 text-brand-green' },
+    { label: 'Pending Crosswalks', value: 2, icon: TrendingUp, color: 'bg-amber-50 text-brand-amber' },
     { label: 'Plans Generated', value: 8, icon: Zap, color: 'bg-purple-50 text-purple-600' }
   ],
   riskDistribution: [
@@ -49,9 +49,9 @@ export default function Dashboard() {
 
         const apiData = {
           stats: [
-            { label: 'Total Boilerplate Sections', value: summary.total_boilerplate_sections ?? mockDashboardData.stats[0].value, icon: Target, color: 'bg-blue-50 text-foam-primary' },
-            { label: 'Active RFPs', value: summary.active_rfps ?? mockDashboardData.stats[1].value, icon: FileText, color: 'bg-green-50 text-foam-green' },
-            { label: 'Pending Crosswalks', value: summary.pending_crosswalks ?? mockDashboardData.stats[2].value, icon: TrendingUp, color: 'bg-amber-50 text-foam-amber' },
+            { label: 'Total Boilerplate Sections', value: summary.total_boilerplate_sections ?? mockDashboardData.stats[0].value, icon: Target, color: 'bg-blue-50 text-brand-primary' },
+            { label: 'Active RFPs', value: summary.active_rfps ?? mockDashboardData.stats[1].value, icon: FileText, color: 'bg-green-50 text-brand-green' },
+            { label: 'Pending Crosswalks', value: summary.pending_crosswalks ?? mockDashboardData.stats[2].value, icon: TrendingUp, color: 'bg-amber-50 text-brand-amber' },
             { label: 'Plans Generated', value: summary.plans_generated ?? mockDashboardData.stats[3].value, icon: Zap, color: 'bg-purple-50 text-purple-600' }
           ],
           riskDistribution: summary.risk_distribution || mockDashboardData.riskDistribution,
@@ -130,7 +130,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {dashboardData.activityFeed.map((activity) => (
               <div key={activity.id} className="flex gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                <div className="w-2 h-2 bg-foam-primary rounded-full mt-2 flex-shrink-0" />
+                <div className="w-2 h-2 bg-brand-primary rounded-full mt-2 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 text-sm">{activity.action}</p>
                   <p className="text-sm text-gray-600 truncate">{activity.description}</p>
@@ -171,7 +171,7 @@ export default function Dashboard() {
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
                       <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-foam-primary rounded-full transition-all" style={{ width: `${rfp.alignmentScore || rfp.alignment_score || 0}%` }} />
+                        <div className="h-full bg-brand-primary rounded-full transition-all" style={{ width: `${rfp.alignmentScore || rfp.alignment_score || 0}%` }} />
                       </div>
                       <span className="text-sm font-medium text-gray-900">{rfp.alignmentScore || rfp.alignment_score || 0}%</span>
                     </div>
@@ -195,7 +195,7 @@ export default function Dashboard() {
                   <span className="text-sm font-semibold text-gray-900">92%</span>
                 </div>
                 <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-foam-green w-[92%]" />
+                  <div className="h-full bg-brand-green w-[92%]" />
                 </div>
               </div>
               <div>
@@ -204,7 +204,7 @@ export default function Dashboard() {
                   <span className="text-sm font-semibold text-gray-900">78%</span>
                 </div>
                 <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-foam-amber w-[78%]" />
+                  <div className="h-full bg-brand-amber w-[78%]" />
                 </div>
               </div>
               <div>
@@ -213,7 +213,7 @@ export default function Dashboard() {
                   <span className="text-sm font-semibold text-gray-900">85%</span>
                 </div>
                 <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-foam-primary w-[85%]" />
+                  <div className="h-full bg-brand-primary w-[85%]" />
                 </div>
               </div>
             </div>
@@ -245,19 +245,19 @@ export default function Dashboard() {
             <h4 className="font-semibold text-gray-900 mb-4">Next Steps</h4>
             <ul className="space-y-3 text-sm">
               <li className="flex gap-2">
-                <span className="text-foam-amber font-bold">1.</span>
+                <span className="text-brand-amber font-bold">1.</span>
                 <span className="text-gray-700">Review DFS RFP analysis</span>
               </li>
               <li className="flex gap-2">
-                <span className="text-foam-amber font-bold">2.</span>
+                <span className="text-brand-amber font-bold">2.</span>
                 <span className="text-gray-700">Generate Project Family Build Plan</span>
               </li>
               <li className="flex gap-2">
-                <span className="text-foam-amber font-bold">3.</span>
+                <span className="text-brand-amber font-bold">3.</span>
                 <span className="text-gray-700">Complete 2 pending crosswalks</span>
               </li>
               <li className="flex gap-2">
-                <span className="text-foam-amber font-bold">4.</span>
+                <span className="text-brand-amber font-bold">4.</span>
                 <span className="text-gray-700">Export 3 draft frameworks</span>
               </li>
             </ul>

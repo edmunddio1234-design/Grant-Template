@@ -69,8 +69,8 @@ export default function Register() {
       <div className="w-full max-w-md">
         {/* Logo / Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-foam-primary rounded-2xl mb-4">
-            <span className="text-white font-bold text-2xl">FM</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-primary rounded-2xl mb-4">
+            <span className="text-white font-bold text-2xl">GA</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Create an Account</h1>
           <p className="text-gray-500 mt-2">
@@ -99,7 +99,7 @@ export default function Register() {
                 placeholder="e.g. Sonny Robinson"
                 required
                 autoFocus
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-foam-primary focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
               />
             </div>
 
@@ -114,7 +114,7 @@ export default function Register() {
                 onChange={updateField('email')}
                 placeholder="you@example.org"
                 required
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-foam-primary focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
               />
             </div>
 
@@ -131,7 +131,7 @@ export default function Register() {
                   placeholder="Min. 8 characters"
                   required
                   minLength={8}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-foam-primary focus:border-transparent pr-10"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent pr-10"
                 />
                 <button
                   type="button"
@@ -159,7 +159,7 @@ export default function Register() {
                 onChange={updateField('confirmPassword')}
                 placeholder="Re-enter your password"
                 required
-                className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-foam-primary focus:border-transparent ${
+                className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent ${
                   form.confirmPassword && !passwordsMatch
                     ? 'border-red-400'
                     : 'border-gray-300'
@@ -174,7 +174,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading || !formValid}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-foam-primary text-white font-semibold rounded-lg hover:bg-foam-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-primary text-white font-semibold rounded-lg hover:bg-brand-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {loading ? (
                 <span className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
@@ -189,7 +189,7 @@ export default function Register() {
           <div className="mt-6 pt-6 border-t border-gray-100 text-center">
             <Link
               to="/login"
-              className="inline-flex items-center gap-1 text-sm text-foam-primary hover:underline font-medium"
+              className="inline-flex items-center gap-1 text-sm text-brand-primary hover:underline font-medium"
             >
               <ArrowLeft size={16} />
               Already have an account? Sign in

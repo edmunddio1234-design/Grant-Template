@@ -32,7 +32,7 @@ export default function Header({ onMenuClick }) {
 
   const pageName = pageNames[location.pathname] || 'Dashboard'
 
-  const userName = user?.name || 'FOAM User'
+  const userName = user?.name || 'User'
   const userRole = roleLabels[user?.role] || user?.role || 'User'
   const initials = userName
     .split(' ')
@@ -71,14 +71,14 @@ export default function Header({ onMenuClick }) {
                 size={20}
                 className={clsx(
                   'absolute left-3 top-1/2 -translate-y-1/2 transition-colors',
-                  searchOpen ? 'text-foam-primary' : 'text-gray-400'
+                  searchOpen ? 'text-brand-primary' : 'text-gray-400'
                 )}
               />
               <input
                 type="text"
                 placeholder="Search..."
                 className={clsx(
-                  'w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-foam-primary focus:border-transparent transition-all',
+                  'w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all',
                   !searchOpen && 'opacity-0'
                 )}
                 onFocus={() => setSearchOpen(true)}
@@ -91,7 +91,7 @@ export default function Header({ onMenuClick }) {
             <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
               <Bell size={20} />
               {notificationCount > 0 && (
-                <span className="absolute top-1 right-1 w-5 h-5 bg-foam-red text-white text-xs rounded-full flex items-center justify-center font-bold">
+                <span className="absolute top-1 right-1 w-5 h-5 bg-brand-red text-white text-xs rounded-full flex items-center justify-center font-bold">
                   {notificationCount > 9 ? '9+' : notificationCount}
                 </span>
               )}
@@ -103,7 +103,7 @@ export default function Header({ onMenuClick }) {
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <div className="w-8 h-8 bg-foam-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
                 {initials}
               </div>
               <ChevronDown size={18} className="text-gray-600" />

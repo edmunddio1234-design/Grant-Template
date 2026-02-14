@@ -221,7 +221,7 @@ export default function RFPUpload() {
           )}
           <button
             onClick={() => handleDeleteRFP(row.id)}
-            className="p-1 hover:bg-gray-100 rounded transition-colors text-foam-red"
+            className="p-1 hover:bg-gray-100 rounded transition-colors text-brand-red"
             title="Delete"
           >
             <Trash2 size={18} />

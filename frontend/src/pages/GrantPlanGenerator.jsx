@@ -198,7 +198,7 @@ export default function GrantPlanGenerator() {
                 </div>
                 <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-foam-primary rounded-full transition-all"
+                    className="h-full bg-brand-primary rounded-full transition-all"
                     style={{ width: `${(plan.wordCount / plan.wordTarget) * 100}%` }}
                   />
                 </div>
@@ -300,7 +300,7 @@ export default function GrantPlanGenerator() {
             ) : (
               <div className="text-sm text-gray-600">
                 <p className="font-medium text-gray-900">No RFPs uploaded yet</p>
-                <p className="mt-1">Upload an RFP from the <a href="/rfp" className="text-foam-primary underline">RFP Upload & Parse</a> page first.</p>
+                <p className="mt-1">Upload an RFP from the <a href="/rfp" className="text-brand-primary underline">RFP Upload & Parse</a> page first.</p>
               </div>
             )}
           </div>
@@ -368,7 +368,7 @@ export default function GrantPlanGenerator() {
                   </div>
                   <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-foam-primary rounded-full"
+                      className="h-full bg-brand-primary rounded-full"
                       style={{ width: `${(selectedPlan.wordCount / selectedPlan.wordTarget) * 100}%` }}
                     />
                   </div>
@@ -402,12 +402,12 @@ export default function GrantPlanGenerator() {
                           </div>
                           <button
                             onClick={() => navigate('/ai-framework')}
-                            className="text-sm text-foam-primary hover:underline"
+                            className="text-sm text-brand-primary hover:underline"
                           >Edit with AI</button>
                         </div>
                         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-foam-primary rounded-full"
+                            className="h-full bg-brand-primary rounded-full"
                             style={{ width: `${Math.min((wordCount / target) * 100, 100)}%` }}
                           />
                         </div>

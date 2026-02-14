@@ -48,7 +48,7 @@ class DatabaseManager:
                 "connect_args": {
                     "timeout": 10,
                     "server_settings": {
-                        "application_name": "foam_grant_engine",
+                        "application_name": "grant_engine",
                         "jit": "off",
                     }
                 }
@@ -175,15 +175,15 @@ async def seed_default_admin() -> None:
 
         if not existing_admin:
             admin = User(
-                email="admin@foamgrants.org",
-                name="FOAM Admin",
+                email="admin@grantengine.org",
+                name="Admin",
                 hashed_password=hash_password("ChangeMe123!"),
                 role=UserRoleEnum.ADMIN,
                 is_active=True,
             )
             session.add(admin)
             await session.commit()
-            logger.info("Default admin user created: admin@foamgrants.org")
+            logger.info("Default admin user created: admin@grantengine.org")
         else:
             logger.info(f"Admin user already exists: {existing_admin.email}")
     except Exception as e:
