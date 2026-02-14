@@ -79,7 +79,7 @@ export default function Header({ onMenuClick }) {
               className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <div className="w-8 h-8 bg-foam-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
-                LR
+                FM
               </div>
               <ChevronDown size={18} className="text-gray-600" />
             </button>
@@ -87,8 +87,8 @@ export default function Header({ onMenuClick }) {
             {userMenuOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
                 <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="font-semibold text-sm text-gray-900">Levar Robinson</p>
-                  <p className="text-xs text-gray-500">Executive Director</p>
+                  <p className="font-semibold text-sm text-gray-900">FOAM Admin</p>
+                  <p className="text-xs text-gray-500">Grant Alignment Engine</p>
                 </div>
                 <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
                   <LogOut size={16} />
