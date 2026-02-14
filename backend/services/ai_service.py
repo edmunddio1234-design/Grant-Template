@@ -92,13 +92,14 @@ Never:
 - Exceed word count targets
 - Create content without clear connection to RFP requirements"""
 
-    def __init__(self, provider: AIProvider, api_key: str, max_retries: int = 3):
+    def __init__(self, provider: AIProvider, api_key: str, model: str = None, max_retries: int = 3):
         """
         Initialize AI Draft Service.
 
         Args:
             provider: AIProvider enum (OPENAI or ANTHROPIC)
             api_key: API key for selected provider
+            model: Optional model override
             max_retries: Number of retries on failure
 
         Raises:
@@ -116,15 +117,17 @@ Never:
         if provider == AIProvider.OPENAI:
             try:
                 import openai
-                self.client = openai.AsyncOpenAI(api_key=api_key)
-                self.model = "gpt-4-turbo"
+                self.async_client = openai.AsyncOpenAI(api_key=api_key)
+                self.sync_client = openai.OpenAI(api_key=api_key)
+                self.model = model or "gpt-4o"
             except ImportError:
                 raise ImportError("openai package required for OpenAI provider")
         elif provider == AIProvider.ANTHROPIC:
             try:
                 import anthropic
-                self.client = anthropic.Anthropic(api_key=api_key)
-                self.model = "claude-opus-4-1"
+                self.async_client = anthropic.AsyncAnthropic(api_key=api_key)
+                self.sync_client = anthropic.Anthropic(api_key=api_key)
+                self.model = model or "claude-sonnet-4-20250514"
             except ImportError:
                 raise ImportError("anthropic package required for Anthropic provider")
         else:
@@ -443,18 +446,18 @@ Provide only the opening paragraph, ready for inclusion in a grant draft."""
         for attempt in range(self.max_retries):
             try:
                 if self.provider == AIProvider.OPENAI:
-                    response = await self.client.chat.completions.create(
+                    # OpenAI: system prompt goes in messages array
+                    full_messages = [{"role": "system", "content": self.SYSTEM_PROMPT}] + messages
+                    response = await self.async_client.chat.completions.create(
                         model=self.model,
-                        messages=messages,
+                        messages=full_messages,
                         max_tokens=max_tokens,
-                        temperature=0.7,
-                        system=self.SYSTEM_PROMPT
+                        temperature=0.7
                     )
                     return response.choices[0].message.content
 
                 elif self.provider == AIProvider.ANTHROPIC:
-                    # Anthropic uses synchronous client
-                    response = self.client.messages.create(
+                    response = await self.async_client.messages.create(
                         model=self.model,
                         max_tokens=max_tokens,
                         system=self.SYSTEM_PROMPT,
@@ -469,7 +472,7 @@ Provide only the opening paragraph, ready for inclusion in a grant draft."""
                 if "rate" in error_str or "quota" in error_str:
                     wait_time = min(self.rate_limit_wait * (2 ** attempt), 60)
                     logger.warning(f"Rate limited; waiting {wait_time}s before retry {attempt + 1}/{self.max_retries}")
-                    time.sleep(wait_time)
+                    await asyncio.sleep(wait_time)
                     self.rate_limit_wait = wait_time
                     continue
 
@@ -477,7 +480,7 @@ Provide only the opening paragraph, ready for inclusion in a grant draft."""
                 if "timeout" in error_str or "connection" in error_str:
                     wait_time = 2 ** attempt
                     logger.warning(f"Transient error; waiting {wait_time}s before retry {attempt + 1}/{self.max_retries}")
-                    time.sleep(wait_time)
+                    await asyncio.sleep(wait_time)
                     continue
 
                 # Non-retryable error
@@ -499,18 +502,20 @@ Provide only the opening paragraph, ready for inclusion in a grant draft."""
         """
         try:
             if self.provider == AIProvider.OPENAI:
-                response = self.client.chat.completions.create(
+                full_messages = [{"role": "system", "content": self.SYSTEM_PROMPT}] + messages
+                response = self.sync_client.chat.completions.create(
                     model=self.model,
-                    messages=messages,
+                    messages=full_messages,
                     max_tokens=max_tokens,
                     temperature=0.7
                 )
                 return response.choices[0].message.content
 
             elif self.provider == AIProvider.ANTHROPIC:
-                response = self.client.messages.create(
+                response = self.sync_client.messages.create(
                     model=self.model,
                     max_tokens=max_tokens,
+                    system=self.SYSTEM_PROMPT,
                     messages=messages
                 )
                 return response.content[0].text
