@@ -108,13 +108,37 @@ const recommendations = [
 ]
 
 export default function GapRiskDashboard() {
-  const [selectedRFP, setSelectedRFP] = useState(1)
+  const [rfpList, setRfpList] = useState(mockRFPs)
+  const [selectedRFP, setSelectedRFP] = useState(null)
   const [overallScore, setOverallScore] = useState(74)
   const [apiGaps, setApiGaps] = useState(null)
   const [apiRecommendations, setApiRecommendations] = useState(null)
 
+  // Fetch real RFPs on mount
+  useEffect(() => {
+    async function fetchRFPs() {
+      try {
+        const res = await apiClient.listRFPs({ limit: 50 })
+        const data = res.data
+        const items = data.items || data.results || data
+        if (Array.isArray(items) && items.length > 0) {
+          const mapped = items.map(r => ({ id: r.id, name: r.title || r.name }))
+          setRfpList(mapped)
+          setSelectedRFP(mapped[0].id)
+        } else {
+          setSelectedRFP(mockRFPs[0].id)
+        }
+      } catch (err) {
+        console.log('RFP list unavailable, using mock data:', err.message)
+        setSelectedRFP(mockRFPs[0].id)
+      }
+    }
+    fetchRFPs()
+  }, [])
+
   // Fetch gap/risk data from API when RFP changes
   useEffect(() => {
+    if (!selectedRFP) return
     async function fetchGapRisk() {
       try {
         const [gapRes, riskRes, recRes] = await Promise.all([
@@ -147,11 +171,11 @@ export default function GapRiskDashboard() {
         <div className="p-6">
           <label className="block text-sm font-medium text-gray-900 mb-3">Select RFP</label>
           <select
-            value={selectedRFP}
-            onChange={(e) => setSelectedRFP(Number(e.target.value))}
+            value={selectedRFP || ''}
+            onChange={(e) => setSelectedRFP(e.target.value)}
             className="input-field max-w-md"
           >
-            {mockRFPs.map((rfp) => (
+            {rfpList.map((rfp) => (
               <option key={rfp.id} value={rfp.id}>{rfp.name}</option>
             ))}
           </select>

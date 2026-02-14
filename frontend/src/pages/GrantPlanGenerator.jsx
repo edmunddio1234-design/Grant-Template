@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Plus, Download, Printer, CheckCircle, Circle, AlertCircle, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Download, Printer, CheckCircle, Circle, AlertCircle, Trash2, Sparkles } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import StatusIndicator from '../components/common/StatusIndicator'
 import toast from 'react-hot-toast'
@@ -126,12 +127,14 @@ export default function GrantPlanGenerator() {
     toast.success(`Plan status updated to ${newStatus}`)
   }
 
+  const navigate = useNavigate()
+
   const handleExportPlan = (planId) => {
     toast.success('Exporting plan to DOCX format')
   }
 
   const handlePrintPlan = (planId) => {
-    toast.success('Opening print preview')
+    window.print()
   }
 
   const handleDeletePlan = async (planId) => {
@@ -208,6 +211,16 @@ export default function GrantPlanGenerator() {
 
               {/* Action Buttons */}
               <div className="flex gap-2 pt-4 border-t border-gray-200">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigate('/ai-draft')
+                  }}
+                  className="flex-1 btn-primary btn-sm"
+                >
+                  <Sparkles size={16} />
+                  AI Draft
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -369,7 +382,10 @@ export default function GrantPlanGenerator() {
                           </div>
                         </div>
                       </div>
-                      <button className="text-sm text-foam-primary hover:underline">Edit</button>
+                      <button
+                        onClick={() => navigate('/ai-draft')}
+                        className="text-sm text-foam-primary hover:underline"
+                      >Edit with AI</button>
                     </div>
                     <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
@@ -405,18 +421,25 @@ export default function GrantPlanGenerator() {
             {/* Export Options */}
             <div className="flex gap-2 pt-4 border-t border-gray-200">
               <button
-                onClick={() => handleExportPlan(selectedPlan.id)}
+                onClick={() => navigate('/ai-draft')}
                 className="flex-1 btn-primary"
               >
+                <Sparkles size={20} />
+                AI Draft
+              </button>
+              <button
+                onClick={() => handleExportPlan(selectedPlan.id)}
+                className="flex-1 btn-secondary"
+              >
                 <Download size={20} />
-                Export to DOCX
+                Export DOCX
               </button>
               <button
                 onClick={() => handlePrintPlan(selectedPlan.id)}
                 className="flex-1 btn-secondary"
               >
                 <Printer size={20} />
-                Print Preview
+                Print
               </button>
             </div>
           </div>

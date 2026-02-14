@@ -19,12 +19,18 @@ client.interceptors.response.use(
       window.location.href = '/login'
     }
 
-    const message = error.response?.data?.detail || error.response?.data?.message || error.message || 'An error occurred'
+    const rawDetail = error.response?.data?.detail
+    // Pydantic validation errors return detail as an array of objects — stringify them
+    const message = typeof rawDetail === 'string'
+      ? rawDetail
+      : Array.isArray(rawDetail)
+        ? rawDetail.map(e => e.msg || JSON.stringify(e)).join('; ')
+        : error.response?.data?.message || error.message || 'An error occurred'
 
     if (error.response?.status >= 500) {
       toast.error('Server error: ' + message)
     } else if (error.response?.status >= 400) {
-      toast.error(message)
+      toast.error(String(message))
     }
 
     return Promise.reject(error)
