@@ -50,9 +50,31 @@ export default function GrantPlanGenerator() {
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [showPlanDetail, setShowPlanDetail] = useState(false)
   const [formData, setFormData] = useState({
-    rfpId: 1,
+    rfpId: '',
     programFocus: 'All Programs'
   })
+  const [rfpList, setRfpList] = useState([])
+  const [rfpLoading, setRfpLoading] = useState(true)
+
+  // Fetch real RFPs from API on mount
+  useEffect(() => {
+    async function fetchRFPs() {
+      setRfpLoading(true)
+      try {
+        const res = await apiClient.listRFPs({ limit: 50 })
+        const data = res.data
+        const items = data.items || data.results || data
+        if (Array.isArray(items) && items.length > 0) {
+          setRfpList(items.map(r => ({ id: r.id, name: r.title || r.name || 'Untitled RFP' })))
+        }
+      } catch (err) {
+        console.log('RFP list unavailable:', err.message)
+      } finally {
+        setRfpLoading(false)
+      }
+    }
+    fetchRFPs()
+  }, [])
 
   // Fetch plans from API on mount
   useEffect(() => {
@@ -86,8 +108,10 @@ export default function GrantPlanGenerator() {
       return
     }
 
+    const selectedRfpName = rfpList.find(r => r.id === formData.rfpId)?.name || 'New Plan'
+
     try {
-      const res = await apiClient.generatePlan(formData.rfpId, `New Plan - ${new Date().toLocaleDateString()}`)
+      const res = await apiClient.generatePlan(formData.rfpId, `${selectedRfpName} - ${new Date().toLocaleDateString()}`)
       const generated = res.data
       const newPlan = {
         id: generated.id || Math.max(0, ...plans.map((p) => typeof p.id === 'number' ? p.id : 0)) + 1,
@@ -104,9 +128,9 @@ export default function GrantPlanGenerator() {
     } catch (err) {
       console.log('Generate API failed, adding locally:', err.message)
       const newPlan = {
-        id: Math.max(0, ...plans.map((p) => typeof p.id === 'number' ? p.id : 0)) + 1,
-        name: `New Plan - ${new Date().toLocaleDateString()}`,
-        rfp: 'Community Foundation Grant 2024',
+        id: crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`,
+        name: `${selectedRfpName} - ${new Date().toLocaleDateString()}`,
+        rfp: selectedRfpName,
         status: 'draft',
         createdDate: new Date().toISOString().split('T')[0],
         lastModified: new Date().toISOString().split('T')[0],
@@ -277,16 +301,25 @@ export default function GrantPlanGenerator() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">Select RFP</label>
-            <select
-              value={formData.rfpId}
-              onChange={(e) => setFormData({ ...formData, rfpId: Number(e.target.value) })}
-              className="input-field"
-            >
-              <option value="">-- Choose an RFP --</option>
-              <option value={1}>Community Foundation Grant 2024</option>
-              <option value={2}>Department of Family Services RFP</option>
-              <option value={3}>Local Nonprofit Partnership Grant</option>
-            </select>
+            {rfpLoading ? (
+              <p className="text-sm text-gray-500">Loading RFPs...</p>
+            ) : rfpList.length > 0 ? (
+              <select
+                value={formData.rfpId}
+                onChange={(e) => setFormData({ ...formData, rfpId: e.target.value })}
+                className="input-field"
+              >
+                <option value="">-- Choose an RFP --</option>
+                {rfpList.map((rfp) => (
+                  <option key={rfp.id} value={rfp.id}>{rfp.name}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="text-sm text-gray-600">
+                <p className="font-medium text-gray-900">No RFPs uploaded yet</p>
+                <p className="mt-1">Upload an RFP from the <a href="/rfp" className="text-foam-primary underline">RFP Upload & Parse</a> page first.</p>
+              </div>
+            )}
           </div>
 
           <div>
