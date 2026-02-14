@@ -285,10 +285,6 @@ class RFP(Base):
         back_populates="rfp",
         cascade="all, delete-orphan"
     )
-    crosswalk_maps: Mapped[list["CrosswalkMap"]] = relationship(
-        back_populates="rfp",
-        cascade="all, delete-orphan"
-    )
     grant_plans: Mapped[list["GrantPlan"]] = relationship(
         back_populates="rfp",
         cascade="all, delete-orphan"
@@ -382,7 +378,6 @@ class CrosswalkMap(Base):
     # Relationships
     rfp_requirement: Mapped["RFPRequirement"] = relationship(back_populates="crosswalk_maps")
     boilerplate_section: Mapped["BoilerplateSection"] = relationship(back_populates="crosswalk_maps")
-    rfp: Mapped["RFP"] = relationship(back_populates="crosswalk_maps")
 
     __table_args__ = (
         Index("idx_crosswalk_rfp_req_id", "rfp_requirement_id"),
