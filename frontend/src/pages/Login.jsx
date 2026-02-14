@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { LogIn, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { apiClient } from '../api/client'
@@ -108,7 +108,13 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-100 text-center">
+          <div className="mt-6 pt-6 border-t border-gray-100 text-center space-y-3">
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-1 text-sm text-foam-primary hover:underline font-medium"
+            >
+              Don't have an account? Create one
+            </Link>
             <p className="text-xs text-gray-400">
               Fathers On A Mission (FOAM) Grant Management System
             </p>
