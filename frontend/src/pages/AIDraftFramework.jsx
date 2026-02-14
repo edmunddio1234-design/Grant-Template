@@ -68,7 +68,16 @@ export default function AIDraftFramework() {
           mapped.sort((a, b) => a.order - b.order)
           setSections(mapped)
           setExpandedSection(mapped[0]?.id)
-          toast.success(`Draft generated with ${mapped.length} sections`)
+
+          // Check if AI actually worked or returned placeholders
+          const config = data.generation_config || {}
+          if (config.placeholder_count > 0 && config.ai_error) {
+            toast.error(`AI error: ${config.ai_error}`, { duration: 8000 })
+          } else if (config.placeholder_count > 0) {
+            toast.error('AI service unavailable — showing placeholder content. Check API key.', { duration: 6000 })
+          } else {
+            toast.success(`Draft generated with ${mapped.length} sections`)
+          }
           return
         }
       }

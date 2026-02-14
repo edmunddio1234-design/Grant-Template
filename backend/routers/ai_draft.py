@@ -669,10 +669,13 @@ CUSTOMIZATION:
                     section_framework["model"] = ai_svc.model
 
                 except Exception as e:
-                    logger.warning(f"AI framework failed for section {section.id}: {e}")
+                    error_msg = str(e)
+                    logger.error(f"AI framework FAILED for section {section.id}: {error_msg}", exc_info=True)
                     _fill_placeholder_framework(section_framework, section, include_outlines, include_justifications)
+                    section_framework["error"] = error_msg
             else:
                 _fill_placeholder_framework(section_framework, section, include_outlines, include_justifications)
+                section_framework["error"] = "No AI API key configured"
 
             return str(section.id), section_framework
 
@@ -699,7 +702,19 @@ CUSTOMIZATION:
         )
         await db.commit()
 
-        logger.info(f"Generated draft framework for plan {plan_id} ({len(framework_sections)} sections)")
+        # Check for AI errors across sections
+        ai_errors = []
+        placeholder_count = 0
+        for sec_id, sec_data in framework_sections.items():
+            if sec_data.get("source") == "placeholder":
+                placeholder_count += 1
+            if sec_data.get("error"):
+                ai_errors.append(sec_data["error"])
+
+        if ai_errors:
+            logger.warning(f"AI errors in draft framework: {ai_errors[0]}")
+
+        logger.info(f"Generated draft framework for plan {plan_id} ({len(framework_sections)} sections, {placeholder_count} placeholders)")
 
         return {
             "framework_id": f"framework_{datetime.utcnow().timestamp()}",
@@ -712,6 +727,8 @@ CUSTOMIZATION:
                 "total_sections": len(framework_sections),
                 "ai_powered": ai_svc is not None,
                 "model": ai_svc.model if ai_svc else None,
+                "placeholder_count": placeholder_count,
+                "ai_error": ai_errors[0] if ai_errors else None,
             },
             "usage_notes": [
                 "Use outlines as guides for section development",
@@ -820,3 +837,39 @@ async def ai_service_status() -> Dict[str, Any]:
             else "No AI API key configured. Set OPENAI_API_KEY or ANTHROPIC_API_KEY."
         ),
     }
+
+
+@router.get(
+    "/test",
+    response_model=Dict[str, Any],
+    summary="Test AI API key with a real call",
+)
+async def test_ai_connection() -> Dict[str, Any]:
+    """Make a real API call to verify the AI key works."""
+    ai_svc = get_ai_service()
+    if not ai_svc:
+        return {
+            "success": False,
+            "error": "No AI service configured. Set OPENAI_API_KEY or ANTHROPIC_API_KEY.",
+            "provider": None,
+        }
+
+    try:
+        response = await ai_svc._call_api([
+            {"role": "user", "content": "Respond with exactly: FOAM AI OK"}
+        ], max_tokens=20)
+        return {
+            "success": True,
+            "provider": ai_svc.provider.value,
+            "model": ai_svc.model,
+            "response": response[:100],
+        }
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"AI test call failed: {error_msg}")
+        return {
+            "success": False,
+            "provider": ai_svc.provider.value,
+            "model": ai_svc.model,
+            "error": error_msg,
+        }
