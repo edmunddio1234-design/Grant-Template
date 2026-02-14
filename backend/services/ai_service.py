@@ -69,7 +69,7 @@ Vision: "All Fathers and Father Figures are active positive role models with the
 === THREE-PART INTEGRATED PROGRAM MODEL ===
 These three components are separate but intertwined — they work holistically.
 
-1. Project Family BUILD (Building Unity through Intentional Leadership Development)
+1. Project Family Build
    - Individualized Plans of Care for each father
    - Minimum 5 case management sessions per father
    - Six-phase onboarding (initial contact within 24 hours of referral)
