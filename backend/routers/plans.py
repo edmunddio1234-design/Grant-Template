@@ -216,9 +216,10 @@ async def list_plans(
             filters.append(GrantPlan.rfp_id == rfp_id)
 
         # Count total
-        count_result = await db.execute(
-            select(func.count()).select_from(GrantPlan).where(and_(*filters) if filters else True)
-        )
+        count_query = select(func.count()).select_from(GrantPlan)
+        if filters:
+            count_query = count_query.where(and_(*filters))
+        count_result = await db.execute(count_query)
         total = count_result.scalar() or 0
 
         # Fetch plans
