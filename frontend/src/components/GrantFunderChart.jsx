@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Award, Clock, XCircle, ChevronDown, ChevronUp, BarChart3, TrendingUp, Zap, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Award, Clock, XCircle, ChevronDown, ChevronUp, BarChart3, TrendingUp, Zap, Loader2, Upload, FileText, GitCompare, PenTool, Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { apiClient } from '../api/client'
 
 // Color palette for funder categories
@@ -20,7 +21,6 @@ function getStyleForCategory(cat, idx) {
   return CATEGORY_STYLES[key] || STYLE_LIST[idx % STYLE_LIST.length]
 }
 
-// Enrich raw funder data with visual properties
 function enrichFunders(raw) {
   return raw.map((d, i) => ({
     ...d,
@@ -35,6 +35,257 @@ function fmt(val) {
 }
 
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3) }
+
+// =============================================
+// WELCOME HERO — shown when no funder data yet
+// =============================================
+const WORKFLOW_STEPS = [
+  {
+    icon: Upload,
+    title: 'Upload RFP',
+    desc: 'Drop in any grant RFP document and the AI parser extracts every requirement automatically.',
+    color: 'from-blue-500 to-indigo-600',
+    bgLight: 'bg-blue-50',
+    textColor: 'text-blue-600',
+    borderColor: 'border-blue-200',
+    route: '/rfp',
+  },
+  {
+    icon: FileText,
+    title: 'Build Boilerplate',
+    desc: 'Store your org\'s reusable narratives, data points, and evidence-based language.',
+    color: 'from-emerald-500 to-teal-600',
+    bgLight: 'bg-emerald-50',
+    textColor: 'text-emerald-600',
+    borderColor: 'border-emerald-200',
+    route: '/boilerplate',
+  },
+  {
+    icon: GitCompare,
+    title: 'Run Crosswalk',
+    desc: 'AI maps every RFP requirement against your boilerplate — gaps and strengths surfaced instantly.',
+    color: 'from-violet-500 to-purple-600',
+    bgLight: 'bg-violet-50',
+    textColor: 'text-violet-600',
+    borderColor: 'border-violet-200',
+    route: '/crosswalk',
+  },
+  {
+    icon: PenTool,
+    title: 'Generate Draft',
+    desc: 'One click creates a full grant narrative draft, section by section, ready for review.',
+    color: 'from-amber-500 to-orange-600',
+    bgLight: 'bg-amber-50',
+    textColor: 'text-amber-600',
+    borderColor: 'border-amber-200',
+    route: '/ai-draft',
+  },
+]
+
+function WelcomeHero() {
+  const navigate = useNavigate()
+  const [activeStep, setActiveStep] = useState(0)
+  const [mounted, setMounted] = useState(false)
+  const [particles, setParticles] = useState([])
+
+  useEffect(() => {
+    setMounted(true)
+    // Generate floating particles once
+    const pts = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 2 + Math.random() * 4,
+      duration: 8 + Math.random() * 12,
+      delay: Math.random() * 5,
+      opacity: 0.1 + Math.random() * 0.15,
+    }))
+    setParticles(pts)
+  }, [])
+
+  // Auto-rotate through steps
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStep(s => (s + 1) % WORKFLOW_STEPS.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const step = WORKFLOW_STEPS[activeStep]
+  const StepIcon = step.icon
+
+  return (
+    <>
+      <style>{`
+        @keyframes floatParticle {
+          0%, 100% { transform: translateY(0px) translateX(0px); }
+          25% { transform: translateY(-15px) translateX(8px); }
+          50% { transform: translateY(-5px) translateX(-6px); }
+          75% { transform: translateY(-20px) translateX(4px); }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.15); }
+          50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.3); }
+        }
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeInScale {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .hero-card-enter { animation: fadeInScale 0.4s ease-out forwards; }
+        .hero-slide-in { animation: slideInRight 0.5s ease-out forwards; }
+        .gradient-animate {
+          background-size: 200% 200%;
+          animation: gradientShift 6s ease infinite;
+        }
+      `}</style>
+
+      <div className={`relative w-full overflow-hidden rounded-2xl border border-gray-100 shadow-sm bg-white transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+        {/* Animated gradient top bar */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 via-pink-500 to-blue-500 rounded-t-2xl gradient-animate" />
+
+        {/* Floating particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {particles.map(p => (
+            <div
+              key={p.id}
+              className="absolute rounded-full bg-indigo-400"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: p.size,
+                height: p.size,
+                opacity: p.opacity,
+                animation: `floatParticle ${p.duration}s ease-in-out ${p.delay}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="relative z-10 p-6 md:p-8">
+          {/* Header row */}
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg" style={{ animation: 'pulseGlow 3s ease-in-out infinite' }}>
+                  <Sparkles size={20} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-extrabold text-gray-900 tracking-tight">
+                    Grant Alignment Engine
+                  </h2>
+                  <p className="text-sm text-gray-400 font-medium">Your AI-powered grant writing workflow</p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/rfp')}
+              className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-sm font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+              Get Started <ArrowRight size={16} />
+            </button>
+          </div>
+
+          {/* Workflow Steps — interactive timeline */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {/* Left: Step selector */}
+            <div className="space-y-2">
+              {WORKFLOW_STEPS.map((s, i) => {
+                const Icon = s.icon
+                const isActive = i === activeStep
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setActiveStep(i)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-300 border ${
+                      isActive
+                        ? `${s.bgLight} ${s.borderColor} shadow-sm`
+                        : 'border-transparent hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-lg transition-all duration-300 ${
+                      isActive
+                        ? `bg-gradient-to-br ${s.color} text-white shadow-md`
+                        : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      <Icon size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold ${isActive ? s.textColor : 'text-gray-300'}`}>
+                          STEP {i + 1}
+                        </span>
+                        {i === 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 font-semibold">
+                            START HERE
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-sm font-semibold truncate ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {s.title}
+                      </p>
+                    </div>
+                    <ArrowRight size={14} className={`transition-all duration-300 ${isActive ? `${s.textColor} translate-x-0 opacity-100` : 'opacity-0 -translate-x-2'}`} />
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Right: Active step detail card */}
+            <div className="flex items-center" key={activeStep}>
+              <div className={`hero-card-enter w-full p-5 rounded-xl border ${step.borderColor} ${step.bgLight}`}>
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border ${step.borderColor} mb-3`}>
+                  <StepIcon size={14} className={step.textColor} />
+                  <span className={`text-xs font-bold ${step.textColor}`}>{step.title}</span>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed mb-4">
+                  {step.desc}
+                </p>
+                <button
+                  onClick={() => navigate(step.route)}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r ${step.color} text-white text-sm font-semibold hover:opacity-90 transition-all shadow-sm hover:shadow-md`}
+                >
+                  Go to {step.title} <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Progress dots */}
+          <div className="flex items-center justify-center gap-2 mt-2">
+            {WORKFLOW_STEPS.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveStep(i)}
+                className={`transition-all duration-300 rounded-full ${
+                  i === activeStep
+                    ? `w-8 h-2 bg-gradient-to-r ${s.color}`
+                    : 'w-2 h-2 bg-gray-200 hover:bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Mobile CTA */}
+          <button
+            onClick={() => navigate('/rfp')}
+            className="sm:hidden w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-sm font-semibold"
+          >
+            Get Started <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
 
 // Animated gradient blobs floating in background
 function GradientBlobs({ data }) {
@@ -73,10 +324,9 @@ function GradientBlobs({ data }) {
   )
 }
 
-// Animated donut with gradient strokes on white bg
+// Animated donut — NO perpetual spin, just a smooth entrance
 function AnimatedDonut({ data, size = 180, grandTotal = 0 }) {
   const [progress, setProgress] = useState(0)
-  const [rotation, setRotation] = useState(0)
 
   useEffect(() => {
     let frame, start = null
@@ -84,16 +334,7 @@ function AnimatedDonut({ data, size = 180, grandTotal = 0 }) {
       if (!start) start = ts
       const t = Math.min((ts - start) / 1800, 1)
       setProgress(easeOutCubic(t))
-      setRotation(r => r + 0.08)
       if (t < 1) frame = requestAnimationFrame(animate)
-      else {
-        // Continue slow rotation after initial animation
-        function spin() {
-          setRotation(r => r + 0.08)
-          frame = requestAnimationFrame(spin)
-        }
-        frame = requestAnimationFrame(spin)
-      }
     }
     frame = requestAnimationFrame(animate)
     return () => cancelAnimationFrame(frame)
@@ -111,7 +352,7 @@ function AnimatedDonut({ data, size = 180, grandTotal = 0 }) {
   const r = 70, cx = 100, cy = 100, sw = 18
 
   return (
-    <svg width={size} height={size} viewBox="0 0 200 200" style={{ transform: `rotate(${rotation}deg)`, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.08))' }}>
+    <svg width={size} height={size} viewBox="0 0 200 200" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.08))' }}>
       {/* Background track */}
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f1f5f9" strokeWidth={sw} />
       {/* Gradient defs */}
@@ -182,7 +423,6 @@ function WaveBars({ data }) {
                 height: `${h}%`,
                 minHeight: 4,
                 opacity: 0.75 + progress * 0.25,
-                animation: `barPulse 3s ease-in-out ${i * 0.3}s infinite alternate`
               }}
             />
           </div>
@@ -199,9 +439,8 @@ export default function GrantFunderChart() {
   const [grantFunderData, setGrantFunderData] = useState([])
   const [totals, setTotals] = useState({ awarded: 0, pending: 0, denied: 0, grand: 0 })
   const [loading, setLoading] = useState(true)
-  const [dataSource, setDataSource] = useState('loading') // 'api' | 'loading'
+  const [dataSource, setDataSource] = useState('loading')
 
-  // Fetch live data from backend
   useEffect(() => {
     let cancelled = false
     async function fetchFunderData() {
@@ -219,7 +458,6 @@ export default function GrantFunderChart() {
           })
           setDataSource('api')
         } else {
-          // API returned empty — no grants yet
           setGrantFunderData([])
           setTotals({ awarded: 0, pending: 0, denied: 0, grand: 0 })
           setDataSource('api')
@@ -227,7 +465,6 @@ export default function GrantFunderChart() {
       } catch (err) {
         if (cancelled) return
         console.log('Funder breakdown API unavailable:', err.message)
-        // No fallback mock data — show empty state
         setGrantFunderData([])
         setTotals({ awarded: 0, pending: 0, denied: 0, grand: 0 })
         setDataSource('api')
@@ -251,18 +488,23 @@ export default function GrantFunderChart() {
 
   const modeLabel = mode === 'background' ? 'Click to focus' : mode === 'static' ? 'Click to expand details' : 'Click to minimize'
 
-  // Empty state
-  if (!loading && grantFunderData.length === 0) {
+  // Loading state
+  if (loading) {
     return (
-      <div className="relative w-full overflow-hidden rounded-2xl border border-gray-100 shadow-sm bg-white p-8 text-center">
+      <div className="relative w-full overflow-hidden rounded-2xl border border-gray-100 shadow-sm bg-white p-12 text-center">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-t-2xl" />
-        <BarChart3 size={32} className="mx-auto text-gray-300 mb-3" />
-        <h3 className="text-lg font-bold text-gray-700 mb-1">Grant Funder Analytics</h3>
-        <p className="text-sm text-gray-400">Upload RFPs with funder information to see live grant pipeline metrics here.</p>
+        <Loader2 size={28} className="mx-auto text-blue-500 animate-spin mb-3" />
+        <p className="text-sm text-gray-400 font-medium">Loading grant data...</p>
       </div>
     )
   }
 
+  // Empty state — show the welcome hero instead of boring $0
+  if (grantFunderData.length === 0) {
+    return <WelcomeHero />
+  }
+
+  // Data exists — show the funder analytics chart
   return (
     <>
       <style>{`
@@ -271,10 +513,6 @@ export default function GrantFunderChart() {
           33% { transform: translate(15px, -20px) scale(1.15); }
           66% { transform: translate(-10px, 10px) scale(0.9); }
           100% { transform: translate(8px, -12px) scale(1.05); }
-        }
-        @keyframes barPulse {
-          0% { opacity: 0.8; }
-          100% { opacity: 1; transform: scaleY(1.04); }
         }
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(16px); }
@@ -297,38 +535,25 @@ export default function GrantFunderChart() {
         }
       `}</style>
 
-      {loading && (
-        <div className="relative w-full overflow-hidden rounded-2xl border border-gray-100 shadow-sm bg-white p-12 text-center">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-t-2xl" />
-          <Loader2 size={28} className="mx-auto text-blue-500 animate-spin mb-3" />
-          <p className="text-sm text-gray-400 font-medium">Loading grant funder data...</p>
-        </div>
-      )}
-      {!loading && (
       <div
         onClick={handleClick}
         className={`
           relative w-full overflow-hidden rounded-2xl cursor-pointer border border-gray-100
           transition-all duration-700 ease-in-out shadow-sm hover:shadow-md
-          ${mode === 'background' ? 'h-52 md:h-60' : mode === 'static' ? 'h-auto' : 'h-auto'}
+          ${mode === 'background' ? 'h-52 md:h-60' : 'h-auto'}
         `}
         style={{ background: '#ffffff' }}
       >
-        {/* Gradient blobs always visible */}
         <GradientBlobs data={grantFunderData} />
-
-        {/* Subtle top gradient accent */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-t-2xl" />
 
         {/* ============ BACKGROUND MODE ============ */}
         {mode === 'background' && (
           <div className="absolute inset-0 flex items-center px-6 md:px-10 pt-2">
-            {/* Left: donut */}
             <div className="relative z-10 hidden md:flex items-center justify-center" style={{ minWidth: 180 }}>
               <AnimatedDonut data={grantFunderData} size={170} grandTotal={grandTotal} />
             </div>
 
-            {/* Center content */}
             <div className="relative z-20 flex-1 text-center px-4">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-full text-xs font-semibold text-blue-600 mb-3 border border-blue-100">
                 <BarChart3 size={13} />
@@ -353,7 +578,6 @@ export default function GrantFunderChart() {
               </div>
             </div>
 
-            {/* Right: wave bars */}
             <div className="relative z-10 w-36 md:w-48 hidden sm:block">
               <WaveBars data={grantFunderData} />
               <div className="flex justify-between mt-1.5 px-0.5">
@@ -363,12 +587,10 @@ export default function GrantFunderChart() {
               </div>
             </div>
 
-            {/* Mobile donut */}
             <div className="absolute right-4 top-1/2 -translate-y-1/2 md:hidden opacity-20">
               <AnimatedDonut data={grantFunderData} size={120} grandTotal={grandTotal} />
             </div>
 
-            {/* Bottom hint */}
             <div className="absolute bottom-3 left-0 right-0 text-center z-20">
               <span className="text-xs text-gray-400 flex items-center justify-center gap-1">
                 <ChevronDown size={14} className="animate-bounce" /> {modeLabel}
@@ -400,7 +622,6 @@ export default function GrantFunderChart() {
               </div>
             </div>
 
-            {/* Gradient stacked bars */}
             <div className="space-y-3">
               {grantFunderData.map((d, i) => {
                 const total = d.awarded + d.pending + d.denied
@@ -449,7 +670,6 @@ export default function GrantFunderChart() {
               })}
             </div>
 
-            {/* Legend */}
             <div className="flex items-center gap-6 mt-5 justify-center">
               <span className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
                 <div className="w-3 h-2 rounded-sm bg-gradient-to-r from-blue-500 to-indigo-600" /> Awarded
@@ -489,7 +709,6 @@ export default function GrantFunderChart() {
               </div>
             </div>
 
-            {/* Summary Cards with gradients */}
             <div className="grid grid-cols-3 gap-3 mb-6">
               <div className="rounded-xl p-4 text-center anim-slide-up border border-emerald-100" style={{ animationDelay: '0ms', background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)' }}>
                 <div className="w-9 h-9 mx-auto rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center mb-2 shadow-lg shadow-emerald-200">
@@ -498,9 +717,9 @@ export default function GrantFunderChart() {
                 <p className="text-xl font-extrabold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">{fmt(totalAwarded)}</p>
                 <p className="text-xs text-gray-500 mt-0.5">Total Awarded</p>
                 <div className="mt-2 h-1 rounded-full bg-gray-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" style={{ width: `${Math.round((totalAwarded / grandTotal) * 100)}%` }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" style={{ width: `${grandTotal > 0 ? Math.round((totalAwarded / grandTotal) * 100) : 0}%` }} />
                 </div>
-                <p className="text-[10px] text-emerald-600 font-semibold mt-1">{Math.round((totalAwarded / grandTotal) * 100)}% of pipeline</p>
+                <p className="text-[10px] text-emerald-600 font-semibold mt-1">{grandTotal > 0 ? Math.round((totalAwarded / grandTotal) * 100) : 0}% of pipeline</p>
               </div>
 
               <div className="rounded-xl p-4 text-center anim-slide-up border border-amber-100" style={{ animationDelay: '80ms', background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' }}>
@@ -510,9 +729,9 @@ export default function GrantFunderChart() {
                 <p className="text-xl font-extrabold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">{fmt(totalPending)}</p>
                 <p className="text-xs text-gray-500 mt-0.5">Total Pending</p>
                 <div className="mt-2 h-1 rounded-full bg-gray-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${Math.round((totalPending / grandTotal) * 100)}%` }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${grandTotal > 0 ? Math.round((totalPending / grandTotal) * 100) : 0}%` }} />
                 </div>
-                <p className="text-[10px] text-amber-600 font-semibold mt-1">{Math.round((totalPending / grandTotal) * 100)}% of pipeline</p>
+                <p className="text-[10px] text-amber-600 font-semibold mt-1">{grandTotal > 0 ? Math.round((totalPending / grandTotal) * 100) : 0}% of pipeline</p>
               </div>
 
               <div className="rounded-xl p-4 text-center anim-slide-up border border-rose-100" style={{ animationDelay: '160ms', background: 'linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)' }}>
@@ -522,13 +741,12 @@ export default function GrantFunderChart() {
                 <p className="text-xl font-extrabold bg-gradient-to-r from-rose-600 to-red-600 bg-clip-text text-transparent">{fmt(totalDenied)}</p>
                 <p className="text-xs text-gray-500 mt-0.5">Total Denied</p>
                 <div className="mt-2 h-1 rounded-full bg-gray-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-rose-400 to-red-500" style={{ width: `${Math.round((totalDenied / grandTotal) * 100)}%` }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-rose-400 to-red-500" style={{ width: `${grandTotal > 0 ? Math.round((totalDenied / grandTotal) * 100) : 0}%` }} />
                 </div>
-                <p className="text-[10px] text-rose-600 font-semibold mt-1">{Math.round((totalDenied / grandTotal) * 100)}% of pipeline</p>
+                <p className="text-[10px] text-rose-600 font-semibold mt-1">{grandTotal > 0 ? Math.round((totalDenied / grandTotal) * 100) : 0}% of pipeline</p>
               </div>
             </div>
 
-            {/* Detailed Table */}
             <div className="rounded-xl border border-gray-100 overflow-hidden shadow-sm">
               <table className="w-full text-sm">
                 <thead>
@@ -544,7 +762,7 @@ export default function GrantFunderChart() {
                 <tbody>
                   {grantFunderData.map((d, i) => {
                     const total = d.awarded + d.pending + d.denied
-                    const successRate = Math.round((d.awarded / total) * 100)
+                    const successRate = total > 0 ? Math.round((d.awarded / total) * 100) : 0
                     return (
                       <tr
                         key={d.name}
@@ -598,7 +816,6 @@ export default function GrantFunderChart() {
           </div>
         )}
       </div>
-      )}
     </>
   )
 }

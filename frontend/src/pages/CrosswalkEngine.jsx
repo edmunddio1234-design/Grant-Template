@@ -5,91 +5,10 @@ import Modal from '../components/common/Modal'
 import toast from 'react-hot-toast'
 import { apiClient } from '../api/client'
 
-const defaultRFPs = [
-  { id: 'demo-1', name: 'Community Foundation Grant 2024' },
-  { id: 'demo-2', name: 'Department of Family Services RFP' },
-  { id: 'demo-3', name: 'Local Nonprofit Partnership Grant' }
-]
-
-const mockMappings = [
-  {
-    id: 1,
-    requirement: 'Demonstrate clear organizational mission focused on family strengthening',
-    boilerplateMatches: ['Organizational History and Mission', 'Project Family Build Program Overview'],
-    riskLevel: 'green',
-    alignmentScore: 92,
-    notes: 'Strong alignment with organizational mission and programs',
-    status: 'approved'
-  },
-  {
-    id: 2,
-    requirement: 'Provide evidence of program effectiveness through evaluation data',
-    boilerplateMatches: ['Evaluation and Outcomes Framework'],
-    riskLevel: 'yellow',
-    alignmentScore: 68,
-    notes: 'Need more outcome metrics and data',
-    status: 'pending'
-  },
-  {
-    id: 3,
-    requirement: 'Organizational capacity to serve 500+ participants annually',
-    boilerplateMatches: ['Organizational Capacity and Infrastructure'],
-    riskLevel: 'green',
-    alignmentScore: 88,
-    notes: 'Infrastructure documented and verified',
-    status: 'approved'
-  },
-  {
-    id: 4,
-    requirement: 'Staff qualifications and experience in family services',
-    boilerplateMatches: ['Project Family Build Program Overview', 'Responsible Fatherhood Classes Curriculum'],
-    riskLevel: 'yellow',
-    alignmentScore: 75,
-    notes: 'Good coverage but need staff bios section',
-    status: 'pending'
-  },
-  {
-    id: 5,
-    requirement: 'Evidence of community partnerships and collaboration',
-    boilerplateMatches: [],
-    riskLevel: 'red',
-    alignmentScore: 0,
-    notes: 'Gap identified - need community partnership section',
-    status: 'pending'
-  },
-  {
-    id: 6,
-    requirement: 'Sustainability plan for program continuation beyond grant period',
-    boilerplateMatches: [],
-    riskLevel: 'red',
-    alignmentScore: 15,
-    notes: 'Critical gap - must develop sustainability narrative',
-    status: 'pending'
-  },
-  {
-    id: 7,
-    requirement: 'Celebration and recognition of fatherhood achievements',
-    boilerplateMatches: ['Celebration of Fatherhood Events'],
-    riskLevel: 'green',
-    alignmentScore: 85,
-    notes: 'Perfect match with Celebration Events program',
-    status: 'approved'
-  },
-  {
-    id: 8,
-    requirement: 'Budget narrative justifying all expenses',
-    boilerplateMatches: [],
-    riskLevel: 'yellow',
-    alignmentScore: 30,
-    notes: 'Partial content available, needs expansion',
-    status: 'pending'
-  }
-]
-
 export default function CrosswalkEngine() {
-  const [rfpList, setRfpList] = useState(defaultRFPs)
+  const [rfpList, setRfpList] = useState([])
   const [selectedRFP, setSelectedRFP] = useState(null)
-  const [mappings, setMappings] = useState(mockMappings)
+  const [mappings, setMappings] = useState([])
   const [riskFilter, setRiskFilter] = useState('all')
   const [selectedMapping, setSelectedMapping] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -106,12 +25,9 @@ export default function CrosswalkEngine() {
           const mapped = items.map(r => ({ id: r.id, name: r.title || r.name }))
           setRfpList(mapped)
           setSelectedRFP(mapped[0].id)
-        } else {
-          setSelectedRFP(defaultRFPs[0].id)
         }
       } catch (err) {
-        console.log('RFP list unavailable, using defaults:', err.message)
-        setSelectedRFP(defaultRFPs[0].id)
+        console.log('RFP list unavailable:', err.message)
       }
     }
     fetchRFPs()

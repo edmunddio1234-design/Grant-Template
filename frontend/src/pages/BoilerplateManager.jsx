@@ -6,80 +6,11 @@ import TagList from '../components/common/TagList'
 import toast from 'react-hot-toast'
 import { apiClient } from '../api/client'
 
-const mockSections = [
-  {
-    id: 1,
-    title: 'Organizational History and Mission',
-    category: 'Basic Info',
-    content: 'Our organization was founded with the mission to strengthen communities through mentorship, education, and engagement.',
-    tags: ['org_narrative', 'core_mission'],
-    program: 'All Programs',
-    lastUpdated: '2024-02-10',
-    version: 5,
-    evidenceType: 'Documented'
-  },
-  {
-    id: 2,
-    title: 'Project Family Build Program Overview',
-    category: 'Program Specific',
-    content: 'Our flagship initiative is designed to strengthen families through structured workshops and mentorship programs.',
-    tags: ['program_specific', 'family_services'],
-    program: 'Project Family Build',
-    lastUpdated: '2024-02-12',
-    version: 8,
-    evidenceType: 'Documented'
-  },
-  {
-    id: 3,
-    title: 'Responsible Fatherhood Classes Curriculum',
-    category: 'Program Specific',
-    content: 'Our curriculum covers communication skills, financial literacy, parenting best practices, and community involvement.',
-    tags: ['program_specific', 'education', 'evidence_based'],
-    program: 'Responsible Fatherhood',
-    lastUpdated: '2024-02-08',
-    version: 6,
-    evidenceType: 'Evidence-Based'
-  },
-  {
-    id: 4,
-    title: 'Organizational Capacity and Infrastructure',
-    category: 'Org Narrative',
-    content: 'Our organization maintains dedicated facilities with capacity to serve 500+ participants annually.',
-    tags: ['capacity', 'infrastructure'],
-    program: 'All Programs',
-    lastUpdated: '2024-02-05',
-    version: 4,
-    evidenceType: 'Documented'
-  },
-  {
-    id: 5,
-    title: 'Evaluation and Outcomes Framework',
-    category: 'Maintenance',
-    content: 'Outcomes measured through pre/post assessments, participant satisfaction surveys, and 6-month follow-up evaluations.',
-    tags: ['evaluation', 'outcomes'],
-    program: 'All Programs',
-    lastUpdated: '2024-02-11',
-    version: 3,
-    evidenceType: 'Documented'
-  },
-  {
-    id: 6,
-    title: 'Celebration of Fatherhood Events',
-    category: 'Program Specific',
-    content: 'Annual citywide celebration highlighting fatherhood role models, featuring awards, performances, and community activities.',
-    tags: ['celebration', 'community_engagement'],
-    program: 'Celebration Events',
-    lastUpdated: '2024-02-09',
-    version: 2,
-    evidenceType: 'Documented'
-  }
-]
-
 const categories = ['All', 'Basic Info', 'Org Narrative', 'Program Specific', 'Maintenance']
-const programs = ['All Programs', 'Project Family Build', 'Responsible Fatherhood', 'Celebration Events', 'Louisiana Barracks']
 
 export default function BoilerplateManager() {
-  const [sections, setSections] = useState(mockSections)
+  const [sections, setSections] = useState([])
+  const [programs, setPrograms] = useState(['All Programs'])
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedProgram, setSelectedProgram] = useState('All Programs')
   const [searchQuery, setSearchQuery] = useState('')
@@ -103,7 +34,7 @@ export default function BoilerplateManager() {
         const data = res.data
         const items = data.items || data.results || data
         if (Array.isArray(items) && items.length > 0) {
-          setSections(items.map(s => ({
+          const mapped = items.map(s => ({
             id: s.id,
             title: s.title,
             category: s.category_name || s.category || 'Basic Info',
@@ -113,10 +44,14 @@ export default function BoilerplateManager() {
             lastUpdated: s.updated_at ? s.updated_at.split('T')[0] : s.last_updated || '',
             version: s.version_number || s.version || 1,
             evidenceType: s.evidence_type || 'Documented'
-          })))
+          }))
+          setSections(mapped)
+          // Build programs list dynamically from actual data
+          const uniquePrograms = [...new Set(mapped.map(s => s.program).filter(Boolean))]
+          setPrograms(['All Programs', ...uniquePrograms.filter(p => p !== 'All Programs')])
         }
       } catch (err) {
-        console.log('Boilerplate API unavailable, using mock data:', err.message)
+        console.log('Boilerplate API unavailable:', err.message)
       }
     }
     fetchSections()

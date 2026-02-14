@@ -313,10 +313,6 @@ export default function GrantPlanGenerator() {
               className="input-field"
             >
               <option>All Programs</option>
-              <option>Project Family Build</option>
-              <option>Responsible Fatherhood</option>
-              <option>Celebration Events</option>
-              <option>Louisiana Barracks</option>
             </select>
           </div>
 
