@@ -6,37 +6,6 @@ import StatusIndicator from '../components/common/StatusIndicator'
 import toast from 'react-hot-toast'
 import { apiClient } from '../api/client'
 
-const mockPlans = [
-  {
-    id: 1,
-    name: 'Community Foundation Grant 2024',
-    rfp: 'Community Foundation Grant 2024',
-    status: 'draft',
-    createdDate: '2024-02-12',
-    lastModified: '2024-02-12',
-    wordCount: 2450,
-    wordTarget: 5000
-  },
-  {
-    id: 2,
-    name: 'DFS Grant - Project Family Build Track',
-    rfp: 'Department of Family Services RFP',
-    status: 'review',
-    createdDate: '2024-02-10',
-    lastModified: '2024-02-12',
-    wordCount: 4850,
-    wordTarget: 7500
-  }
-]
-
-const mockPlanSections = [
-  { id: 1, title: 'Executive Summary', words: 280, target: 250, complete: true, alignmentScore: 95 },
-  { id: 2, title: 'Organizational Background', words: 420, target: 500, complete: true, alignmentScore: 88 },
-  { id: 3, title: 'Project Description', words: 1200, target: 1500, complete: true, alignmentScore: 82 },
-  { id: 4, title: 'Evaluation Plan', words: 380, target: 750, complete: false, alignmentScore: 65 },
-  { id: 5, title: 'Budget Narrative', words: 170, target: 400, complete: false, alignmentScore: 45 }
-]
-
 const statusConfig = {
   draft: 'draft',
   review: 'pending',
@@ -45,7 +14,8 @@ const statusConfig = {
 }
 
 export default function GrantPlanGenerator() {
-  const [plans, setPlans] = useState(mockPlans)
+  const [plans, setPlans] = useState([])
+  const [plansLoading, setPlansLoading] = useState(true)
   const [selectedPlan, setSelectedPlan] = useState(null)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [showPlanDetail, setShowPlanDetail] = useState(false)
@@ -79,6 +49,7 @@ export default function GrantPlanGenerator() {
   // Fetch plans from API on mount
   useEffect(() => {
     async function fetchPlans() {
+      setPlansLoading(true)
       try {
         const res = await apiClient.listPlans({ limit: 50 })
         const data = res.data
@@ -92,11 +63,14 @@ export default function GrantPlanGenerator() {
             createdDate: p.created_at ? p.created_at.split('T')[0] : '',
             lastModified: p.updated_at ? p.updated_at.split('T')[0] : '',
             wordCount: p.total_word_count || p.wordCount || 0,
-            wordTarget: p.total_word_target || p.wordTarget || 5000
+            wordTarget: p.total_word_target || p.wordTarget || 5000,
+            sections: p.sections || []
           })))
         }
       } catch (err) {
-        console.log('Plans API unavailable, using mock data:', err.message)
+        console.log('Plans API unavailable:', err.message)
+      } finally {
+        setPlansLoading(false)
       }
     }
     fetchPlans()
@@ -190,6 +164,15 @@ export default function GrantPlanGenerator() {
       </div>
 
       {/* Plans Grid */}
+      {plansLoading && (
+        <div className="text-center py-12 text-gray-500">Loading plans...</div>
+      )}
+      {!plansLoading && plans.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">No grant plans yet</p>
+          <p className="text-gray-400 mt-2">Click "Generate Plan" above to create your first plan from an uploaded RFP.</p>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {plans.map((plan) => (
           <div key={plan.id} className="card-hover cursor-pointer" onClick={() => {
@@ -397,37 +380,43 @@ export default function GrantPlanGenerator() {
             <div>
               <h4 className="font-semibold text-gray-900 mb-3">Sections</h4>
               <div className="space-y-3">
-                {mockPlanSections.map((section) => (
-                  <div key={section.id} className="p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-start gap-3 flex-1">
-                        {section.complete ? (
-                          <CheckCircle size={20} className="text-emerald-600 flex-shrink-0 mt-0.5" />
-                        ) : (
-                          <Circle size={20} className="text-gray-300 flex-shrink-0 mt-0.5" />
-                        )}
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{section.title}</p>
-                          <div className="flex gap-4 mt-2 text-sm text-gray-600">
-                            <span>{section.words} / {section.target} words</span>
-                            <span>•</span>
-                            <span>Alignment: {section.alignmentScore}%</span>
+                {(selectedPlan.sections && selectedPlan.sections.length > 0) ? (
+                  selectedPlan.sections.map((section, index) => {
+                    const wordCount = section.suggested_content ? section.suggested_content.split(/\s+/).filter(Boolean).length : 0
+                    const target = section.word_limit || 500
+                    return (
+                      <div key={section.id || index} className="p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start gap-3 flex-1">
+                            {wordCount > 0 ? (
+                              <CheckCircle size={20} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+                            ) : (
+                              <Circle size={20} className="text-gray-300 flex-shrink-0 mt-0.5" />
+                            )}
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{section.section_title || section.title}</p>
+                              <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                                <span>{wordCount} / {target} words</span>
+                              </div>
+                            </div>
                           </div>
+                          <button
+                            onClick={() => navigate('/ai-framework')}
+                            className="text-sm text-foam-primary hover:underline"
+                          >Edit with AI</button>
+                        </div>
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-foam-primary rounded-full"
+                            style={{ width: `${Math.min((wordCount / target) * 100, 100)}%` }}
+                          />
                         </div>
                       </div>
-                      <button
-                        onClick={() => navigate('/ai-framework')}
-                        className="text-sm text-foam-primary hover:underline"
-                      >Edit with AI</button>
-                    </div>
-                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-foam-primary rounded-full"
-                        style={{ width: `${(section.words / section.target) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                    )
+                  })
+                ) : (
+                  <p className="text-sm text-gray-500">No sections found. Generate an AI Draft to create content for this plan.</p>
+                )}
               </div>
             </div>
 

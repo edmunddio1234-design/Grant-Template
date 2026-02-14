@@ -185,7 +185,7 @@ export const apiClient = {
     client.post('/ai/justification', null, { params }),
 
   generateDraftFramework: (planId, params = {}) =>
-    client.post(`/ai/draft-framework/${planId}`, null, { params }),
+    client.post(`/ai/draft-framework/${planId}`, null, { params, timeout: 120000 }),
 
   getSavedDrafts: (planId, blockType) =>
     client.get(`/ai/drafts/${planId}`, { params: blockType ? { block_type: blockType } : {} })

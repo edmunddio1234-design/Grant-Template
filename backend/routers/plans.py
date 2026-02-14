@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 from database import get_db
 from models import (
@@ -165,7 +165,7 @@ async def generate_plan(
 
         logger.info(f"Generated plan: {plan.id} for RFP {rfp_id}")
 
-        return GrantPlanRead.from_orm(plan)
+        return GrantPlanRead.model_validate(plan)
     except HTTPException:
         raise
     except Exception as e:
@@ -222,8 +222,8 @@ async def list_plans(
         count_result = await db.execute(count_query)
         total = count_result.scalar() or 0
 
-        # Fetch plans
-        query = select(GrantPlan).order_by(GrantPlan.created_at.desc())
+        # Fetch plans with eager-loaded sections (required for async SQLAlchemy)
+        query = select(GrantPlan).options(selectinload(GrantPlan.sections)).order_by(GrantPlan.created_at.desc())
         if filters:
             query = query.where(and_(*filters))
 
@@ -236,7 +236,7 @@ async def list_plans(
             total=total,
             skip=skip,
             limit=limit,
-            items=[GrantPlanRead.from_orm(plan) for plan in plans],
+            items=[GrantPlanRead.model_validate(plan) for plan in plans],
         )
     except Exception as e:
         logger.error(f"Error listing plans: {e}", exc_info=True)
@@ -270,7 +270,10 @@ async def get_plan(
         HTTPException: If plan not found.
     """
     try:
-        plan = await db.get(GrantPlan, str(plan_id))
+        result = await db.execute(
+            select(GrantPlan).options(selectinload(GrantPlan.sections)).where(GrantPlan.id == str(plan_id))
+        )
+        plan = result.scalar_one_or_none()
         if not plan:
             logger.warning(f"Plan not found: {plan_id}")
             raise HTTPException(
@@ -278,12 +281,9 @@ async def get_plan(
                 detail="Plan not found",
             )
 
-        # Load sections
-        await db.refresh(plan, ["sections"])
-
         logger.info(f"Retrieved plan: {plan_id}")
 
-        return GrantPlanRead.from_orm(plan)
+        return GrantPlanRead.model_validate(plan)
     except HTTPException:
         raise
     except Exception as e:
@@ -341,7 +341,7 @@ async def get_plan_sections(
 
         logger.info(f"Retrieved {len(sections)} sections for plan {plan_id}")
 
-        return [GrantPlanSectionRead.from_orm(sec) for sec in sections]
+        return [GrantPlanSectionRead.model_validate(sec) for sec in sections]
     except HTTPException:
         raise
     except Exception as e:
@@ -494,7 +494,7 @@ async def update_plan_status(
 
         logger.info(f"Updated plan {plan_id} status: {old_status} -> {status}")
 
-        return GrantPlanRead.from_orm(plan)
+        return GrantPlanRead.model_validate(plan)
     except HTTPException:
         raise
     except Exception as e:
