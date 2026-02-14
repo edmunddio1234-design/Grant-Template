@@ -84,6 +84,7 @@ async def log_audit(
 async def generate_plan(
     rfp_id: UUID,
     plan_title: Optional[str] = Query(None, description="Custom plan title"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> GrantPlanRead:
     """
@@ -219,6 +220,7 @@ async def list_plans(
     limit: int = Query(20, ge=1, le=100),
     status_filter: Optional[GrantPlanStatusEnum] = Query(None, description="Filter by status"),
     rfp_id: Optional[UUID] = Query(None, description="Filter by RFP"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[GrantPlanRead]:
     """
@@ -651,6 +653,7 @@ async def get_compliance_checklist(
 async def export_plan(
     plan_id: UUID,
     format: str = Query("json", regex="^(json|docx)$", description="Export format"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """

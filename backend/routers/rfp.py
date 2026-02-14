@@ -97,6 +97,7 @@ async def upload_rfp(
     funder_name: Optional[str] = Query(None, description="Funder organization name"),
     deadline: Optional[str] = Query(None, description="Application deadline (ISO format)"),
     funding_amount: Optional[float] = Query(None, ge=0, description="Funding amount"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> RFPRead:
     """
@@ -266,6 +267,7 @@ async def list_rfps(
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(20, ge=1, le=100, description="Items to return"),
     status_filter: Optional[RFPStatusEnum] = Query(None, description="Filter by status"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[RFPListRead]:
     """

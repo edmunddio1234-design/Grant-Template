@@ -59,6 +59,7 @@ router = APIRouter(prefix="/api/boilerplate", tags=["boilerplate"])
 async def list_categories(
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(20, ge=1, le=100, description="Items to return"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[BoilerplateCategoryRead]:
     """
@@ -181,6 +182,7 @@ async def list_sections(
     search: Optional[str] = Query(None, description="Search title and content"),
     tags: Optional[List[str]] = Query(None, description="Filter by tags"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[BoilerplateSectionRead]:
     """
@@ -761,6 +763,7 @@ async def search_boilerplate(
     query: str = Query(..., min_length=2, description="Search query"),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[Dict[str, Any]]:
     """

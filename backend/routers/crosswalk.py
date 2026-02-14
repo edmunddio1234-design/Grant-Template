@@ -285,6 +285,7 @@ async def get_crosswalk(
     rfp_id: UUID,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[CrosswalkResult]:
     """
@@ -634,7 +635,7 @@ async def regenerate_crosswalk(
         await db.commit()
 
         # Generate new crosswalk
-        return await generate_crosswalk(rfp_id, db)
+        return await generate_crosswalk(rfp_id, current_user, db)
     except HTTPException:
         raise
     except Exception as e:
@@ -660,6 +661,7 @@ async def regenerate_crosswalk(
 async def export_crosswalk(
     rfp_id: UUID,
     format: str = Query("json", regex="^(csv|json)$", description="Export format"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """

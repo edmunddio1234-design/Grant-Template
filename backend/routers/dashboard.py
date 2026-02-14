@@ -586,6 +586,7 @@ async def get_alignment_scores(
 async def get_recommendations(
     rfp_id: UUID,
     priority: Optional[str] = Query(None, regex="^(high|medium|low)$", description="Filter by priority"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> List[Dict[str, Any]]:
     """
