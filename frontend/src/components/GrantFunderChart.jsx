@@ -74,7 +74,7 @@ function GradientBlobs({ data }) {
 }
 
 // Animated donut with gradient strokes on white bg
-function AnimatedDonut({ data, size = 180 }) {
+function AnimatedDonut({ data, size = 180, grandTotal = 0 }) {
   const [progress, setProgress] = useState(0)
   const [rotation, setRotation] = useState(0)
 
@@ -325,7 +325,7 @@ export default function GrantFunderChart() {
           <div className="absolute inset-0 flex items-center px-6 md:px-10 pt-2">
             {/* Left: donut */}
             <div className="relative z-10 hidden md:flex items-center justify-center" style={{ minWidth: 180 }}>
-              <AnimatedDonut data={grantFunderData} size={170} />
+              <AnimatedDonut data={grantFunderData} size={170} grandTotal={grandTotal} />
             </div>
 
             {/* Center content */}
@@ -365,7 +365,7 @@ export default function GrantFunderChart() {
 
             {/* Mobile donut */}
             <div className="absolute right-4 top-1/2 -translate-y-1/2 md:hidden opacity-20">
-              <AnimatedDonut data={grantFunderData} size={120} />
+              <AnimatedDonut data={grantFunderData} size={120} grandTotal={grandTotal} />
             </div>
 
             {/* Bottom hint */}

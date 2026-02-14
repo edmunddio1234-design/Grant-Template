@@ -167,11 +167,9 @@ export default function BoilerplateManager() {
     try {
       if (editingSection) {
         await apiClient.updateSection(editingSection.id, {
-          title: formData.title,
+          section_title: formData.title,
           content: formData.content,
-          category_name: formData.category,
           program_area: formData.program,
-          evidence_type: formData.evidenceType,
           tags: formData.tags
         })
         setSections(sections.map((s) =>

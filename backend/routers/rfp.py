@@ -285,9 +285,10 @@ async def list_rfps(
             filters.append(RFP.status == status_filter)
 
         # Get total count
-        count_result = await db.execute(
-            select(func.count()).select_from(RFP).where(*filters if filters else True)
-        )
+        count_query = select(func.count()).select_from(RFP)
+        if filters:
+            count_query = count_query.where(*filters)
+        count_result = await db.execute(count_query)
         total = count_result.scalar() or 0
 
         # Fetch RFPs

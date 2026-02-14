@@ -5,10 +5,10 @@ import Modal from '../components/common/Modal'
 import toast from 'react-hot-toast'
 import { apiClient } from '../api/client'
 
-const mockRFPs = [
-  { id: 1, name: 'Community Foundation Grant 2024' },
-  { id: 2, name: 'Department of Family Services RFP' },
-  { id: 3, name: 'Local Nonprofit Partnership Grant' }
+const defaultRFPs = [
+  { id: 'demo-1', name: 'Community Foundation Grant 2024' },
+  { id: 'demo-2', name: 'Department of Family Services RFP' },
+  { id: 'demo-3', name: 'Local Nonprofit Partnership Grant' }
 ]
 
 const mockMappings = [
@@ -87,15 +87,39 @@ const mockMappings = [
 ]
 
 export default function CrosswalkEngine() {
-  const [selectedRFP, setSelectedRFP] = useState(1)
+  const [rfpList, setRfpList] = useState(defaultRFPs)
+  const [selectedRFP, setSelectedRFP] = useState(null)
   const [mappings, setMappings] = useState(mockMappings)
   const [riskFilter, setRiskFilter] = useState('all')
   const [selectedMapping, setSelectedMapping] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [editingMapping, setEditingMapping] = useState(null)
 
+  // Fetch real RFPs on mount
+  useEffect(() => {
+    async function fetchRFPs() {
+      try {
+        const res = await apiClient.listRFPs({ limit: 50 })
+        const data = res.data
+        const items = data.items || data.results || data
+        if (Array.isArray(items) && items.length > 0) {
+          const mapped = items.map(r => ({ id: r.id, name: r.title || r.name }))
+          setRfpList(mapped)
+          setSelectedRFP(mapped[0].id)
+        } else {
+          setSelectedRFP(defaultRFPs[0].id)
+        }
+      } catch (err) {
+        console.log('RFP list unavailable, using defaults:', err.message)
+        setSelectedRFP(defaultRFPs[0].id)
+      }
+    }
+    fetchRFPs()
+  }, [])
+
   // Fetch crosswalk data from API when RFP changes
   useEffect(() => {
+    if (!selectedRFP) return
     async function fetchCrosswalk() {
       try {
         const res = await apiClient.getCrosswalkMatrix(selectedRFP)
@@ -200,11 +224,11 @@ export default function CrosswalkEngine() {
         <div className="p-6">
           <label className="block text-sm font-medium text-gray-900 mb-3">Select RFP</label>
           <select
-            value={selectedRFP}
-            onChange={(e) => setSelectedRFP(Number(e.target.value))}
+            value={selectedRFP || ''}
+            onChange={(e) => setSelectedRFP(e.target.value)}
             className="input-field max-w-md"
           >
-            {mockRFPs.map((rfp) => (
+            {rfpList.map((rfp) => (
               <option key={rfp.id} value={rfp.id}>{rfp.name}</option>
             ))}
           </select>
