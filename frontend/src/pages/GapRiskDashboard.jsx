@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PieChart, Pie, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts'
 import { AlertTriangle, TrendingDown, Zap } from 'lucide-react'
 import RiskBadge from '../components/common/RiskBadge'
+import { apiClient } from '../api/client'
 
 const mockRFPs = [
   { id: 1, name: 'Community Foundation Grant 2024' },
@@ -108,7 +109,30 @@ const recommendations = [
 
 export default function GapRiskDashboard() {
   const [selectedRFP, setSelectedRFP] = useState(1)
-  const [overallScore] = useState(74)
+  const [overallScore, setOverallScore] = useState(74)
+  const [apiGaps, setApiGaps] = useState(null)
+  const [apiRecommendations, setApiRecommendations] = useState(null)
+
+  // Fetch gap/risk data from API when RFP changes
+  useEffect(() => {
+    async function fetchGapRisk() {
+      try {
+        const [gapRes, riskRes, recRes] = await Promise.all([
+          apiClient.getGapAnalysis(selectedRFP),
+          apiClient.getRiskDistribution(selectedRFP),
+          apiClient.getRecommendations(selectedRFP)
+        ])
+        if (gapRes.data) {
+          setOverallScore(gapRes.data.overall_score || gapRes.data.overallScore || 74)
+          if (Array.isArray(gapRes.data.gaps)) setApiGaps(gapRes.data.gaps)
+        }
+        if (Array.isArray(recRes.data)) setApiRecommendations(recRes.data)
+      } catch (err) {
+        console.log('Gap/Risk API unavailable, using mock data:', err.message)
+      }
+    }
+    fetchGapRisk()
+  }, [selectedRFP])
 
   return (
     <div className="p-6 space-y-6">

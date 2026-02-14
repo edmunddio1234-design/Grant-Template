@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Trash2, Eye, Download, RefreshCw } from 'lucide-react'
 import FileUpload from '../components/common/FileUpload'
 import Modal from '../components/common/Modal'
 import StatusIndicator from '../components/common/StatusIndicator'
 import DataTable from '../components/common/DataTable'
 import toast from 'react-hot-toast'
+import { apiClient } from '../api/client'
 
 const mockRFPs = [
   {
@@ -55,6 +56,32 @@ export default function RFPUpload() {
   const [viewingRFP, setViewingRFP] = useState(null)
   const [showRequirements, setShowRequirements] = useState(false)
 
+  // Fetch RFPs from API on mount
+  useEffect(() => {
+    async function fetchRFPs() {
+      try {
+        const res = await apiClient.listRFPs({ limit: 50 })
+        const data = res.data
+        const items = data.items || data.results || data
+        if (Array.isArray(items) && items.length > 0) {
+          setRFPs(items.map(r => ({
+            id: r.id,
+            name: r.title || r.name,
+            uploadDate: r.created_at ? r.created_at.split('T')[0] : r.upload_date || '',
+            status: r.status || 'uploaded',
+            file: r.original_filename || r.file || '',
+            requirements: r.requirement_count || r.requirements || 0,
+            sections: r.section_count || r.sections || 0,
+            wordLimit: r.total_word_limit || r.wordLimit || 0
+          })))
+        }
+      } catch (err) {
+        console.log('RFP API unavailable, using mock data:', err.message)
+      }
+    }
+    fetchRFPs()
+  }, [])
+
   const handleFileDrop = (files) => {
     setIsUploading(true)
     setTimeout(() => {
@@ -68,23 +95,47 @@ export default function RFPUpload() {
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index))
   }
 
-  const handleProcessRFP = (file) => {
-    const newRFP = {
-      id: Math.max(...rfps.map((r) => r.id)) + 1,
-      name: file.name.replace(/\.[^/.]+$/, ''),
-      uploadDate: new Date().toISOString().split('T')[0],
-      status: 'parsing',
-      file: file.name,
-      requirements: Math.floor(Math.random() * 15) + 15,
-      sections: Math.floor(Math.random() * 8) + 5,
-      wordLimit: Math.floor(Math.random() * 3000) + 3000
+  const handleProcessRFP = async (file) => {
+    try {
+      const res = await apiClient.uploadRFP(file, { title: file.name.replace(/\.[^/.]+$/, '') })
+      const uploaded = res.data
+      const newRFP = {
+        id: uploaded.id || Math.max(0, ...rfps.map((r) => typeof r.id === 'number' ? r.id : 0)) + 1,
+        name: uploaded.title || file.name.replace(/\.[^/.]+$/, ''),
+        uploadDate: new Date().toISOString().split('T')[0],
+        status: uploaded.status || 'parsing',
+        file: file.name,
+        requirements: uploaded.requirement_count || 0,
+        sections: uploaded.section_count || 0,
+        wordLimit: uploaded.total_word_limit || 0
+      }
+      setRFPs([newRFP, ...rfps])
+      setUploadedFiles(uploadedFiles.filter((f) => f.name !== file.name))
+      toast.success('RFP uploaded and queued for parsing')
+    } catch (err) {
+      console.log('Upload API failed, adding locally:', err.message)
+      const newRFP = {
+        id: Math.max(0, ...rfps.map((r) => typeof r.id === 'number' ? r.id : 0)) + 1,
+        name: file.name.replace(/\.[^/.]+$/, ''),
+        uploadDate: new Date().toISOString().split('T')[0],
+        status: 'parsing',
+        file: file.name,
+        requirements: Math.floor(Math.random() * 15) + 15,
+        sections: Math.floor(Math.random() * 8) + 5,
+        wordLimit: Math.floor(Math.random() * 3000) + 3000
+      }
+      setRFPs([newRFP, ...rfps])
+      setUploadedFiles(uploadedFiles.filter((f) => f.name !== file.name))
+      toast.success('RFP queued for parsing (offline mode)')
     }
-    setRFPs([newRFP, ...rfps])
-    setUploadedFiles(uploadedFiles.filter((f) => f.name !== file.name))
-    toast.success('RFP queued for parsing')
   }
 
-  const handleDeleteRFP = (id) => {
+  const handleDeleteRFP = async (id) => {
+    try {
+      await apiClient.deleteRFP(id)
+    } catch (err) {
+      console.log('Delete API failed, removing locally:', err.message)
+    }
     setRFPs(rfps.filter((r) => r.id !== id))
     toast.success('RFP deleted')
   }

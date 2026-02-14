@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     API_PORT: int = Field(default=8000, ge=1024, le=65535)
 
     # CORS Configuration — stored as comma-separated strings
-    CORS_ORIGINS: str = Field(default="http://localhost:3000,http://localhost:8000")
+    CORS_ORIGINS: str = Field(default="http://localhost:3000,http://localhost:8000,https://grant-template.vercel.app")
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: str = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
     CORS_ALLOW_HEADERS: str = "*"

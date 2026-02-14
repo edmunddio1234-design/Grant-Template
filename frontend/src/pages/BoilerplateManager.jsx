@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Plus, Edit2, Trash2, Clock, Tag, Filter, Download, Upload as UploadIcon } from 'lucide-react'
 import DataTable from '../components/common/DataTable'
 import Modal from '../components/common/Modal'
 import TagList from '../components/common/TagList'
 import toast from 'react-hot-toast'
+import { apiClient } from '../api/client'
 
 const mockSections = [
   {
@@ -94,6 +95,33 @@ export default function BoilerplateManager() {
     evidenceType: 'Documented'
   })
 
+  // Fetch sections from API on mount
+  useEffect(() => {
+    async function fetchSections() {
+      try {
+        const res = await apiClient.getSections({ limit: 100 })
+        const data = res.data
+        const items = data.items || data.results || data
+        if (Array.isArray(items) && items.length > 0) {
+          setSections(items.map(s => ({
+            id: s.id,
+            title: s.title,
+            category: s.category_name || s.category || 'Basic Info',
+            content: s.content || '',
+            tags: s.tags || [],
+            program: s.program_area || s.program || 'All Programs',
+            lastUpdated: s.updated_at ? s.updated_at.split('T')[0] : s.last_updated || '',
+            version: s.version_number || s.version || 1,
+            evidenceType: s.evidence_type || 'Documented'
+          })))
+        }
+      } catch (err) {
+        console.log('Boilerplate API unavailable, using mock data:', err.message)
+      }
+    }
+    fetchSections()
+  }, [])
+
   const filteredSections = useMemo(() => {
     return sections.filter((section) => {
       const matchCategory = selectedCategory === 'All' || section.category === selectedCategory
@@ -130,35 +158,81 @@ export default function BoilerplateManager() {
     setShowModal(true)
   }
 
-  const handleSaveSection = () => {
+  const handleSaveSection = async () => {
     if (!formData.title.trim() || !formData.content.trim()) {
       toast.error('Please fill in all required fields')
       return
     }
 
-    if (editingSection) {
-      setSections(sections.map((s) =>
-        s.id === editingSection.id
-          ? { ...s, ...formData, version: s.version + 1, lastUpdated: new Date().toISOString().split('T')[0] }
-          : s
-      ))
-      toast.success('Section updated successfully')
-    } else {
-      setSections([
-        {
-          ...formData,
-          id: Math.max(...sections.map((s) => s.id)) + 1,
-          lastUpdated: new Date().toISOString().split('T')[0],
-          version: 1
-        },
-        ...sections
-      ])
-      toast.success('Section created successfully')
+    try {
+      if (editingSection) {
+        await apiClient.updateSection(editingSection.id, {
+          title: formData.title,
+          content: formData.content,
+          category_name: formData.category,
+          program_area: formData.program,
+          evidence_type: formData.evidenceType,
+          tags: formData.tags
+        })
+        setSections(sections.map((s) =>
+          s.id === editingSection.id
+            ? { ...s, ...formData, version: s.version + 1, lastUpdated: new Date().toISOString().split('T')[0] }
+            : s
+        ))
+        toast.success('Section updated successfully')
+      } else {
+        const res = await apiClient.createSection({
+          title: formData.title,
+          content: formData.content,
+          category_name: formData.category,
+          program_area: formData.program,
+          evidence_type: formData.evidenceType,
+          tags: formData.tags
+        })
+        const newSection = res.data
+        setSections([
+          {
+            ...formData,
+            id: newSection.id || Math.max(0, ...sections.map((s) => typeof s.id === 'number' ? s.id : 0)) + 1,
+            lastUpdated: new Date().toISOString().split('T')[0],
+            version: 1
+          },
+          ...sections
+        ])
+        toast.success('Section created successfully')
+      }
+    } catch (err) {
+      console.log('API save failed, updating locally:', err.message)
+      // Fallback: update local state even if API fails
+      if (editingSection) {
+        setSections(sections.map((s) =>
+          s.id === editingSection.id
+            ? { ...s, ...formData, version: s.version + 1, lastUpdated: new Date().toISOString().split('T')[0] }
+            : s
+        ))
+        toast.success('Section updated locally')
+      } else {
+        setSections([
+          {
+            ...formData,
+            id: Math.max(0, ...sections.map((s) => typeof s.id === 'number' ? s.id : 0)) + 1,
+            lastUpdated: new Date().toISOString().split('T')[0],
+            version: 1
+          },
+          ...sections
+        ])
+        toast.success('Section created locally')
+      }
     }
     setShowModal(false)
   }
 
-  const handleDeleteSection = (id) => {
+  const handleDeleteSection = async (id) => {
+    try {
+      await apiClient.deleteSection(id)
+    } catch (err) {
+      console.log('API delete failed, removing locally:', err.message)
+    }
     setSections(sections.filter((s) => s.id !== id))
     toast.success('Section deleted')
   }

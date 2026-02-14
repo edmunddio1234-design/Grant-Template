@@ -7,7 +7,8 @@ const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 30000
 })
 
 client.interceptors.response.use(
@@ -31,10 +32,16 @@ client.interceptors.response.use(
 )
 
 export const apiClient = {
-  // Boilerplate Manager
-  getCategories: () => client.get('/boilerplate/categories'),
+  // ============================================================================
+  // Boilerplate Manager (Module 1) - prefix: /api/boilerplate
+  // ============================================================================
+  getCategories: (params) => client.get('/boilerplate/categories', { params }),
+
+  createCategory: (data) => client.post('/boilerplate/categories', data),
 
   getSections: (params) => client.get('/boilerplate/sections', { params }),
+
+  getSection: (id) => client.get(`/boilerplate/sections/${id}`),
 
   createSection: (data) => client.post('/boilerplate/sections', data),
 
@@ -42,78 +49,138 @@ export const apiClient = {
 
   deleteSection: (id) => client.delete(`/boilerplate/sections/${id}`),
 
-  searchBoilerplate: (query, params) => client.get(`/boilerplate/search?q=${query}`, { params }),
+  getSectionVersions: (sectionId) => client.get(`/boilerplate/sections/${sectionId}/versions`),
 
-  getVersionHistory: (sectionId) => client.get(`/boilerplate/sections/${sectionId}/history`),
+  restoreSectionVersion: (sectionId, versionNumber) =>
+    client.post(`/boilerplate/sections/${sectionId}/restore/${versionNumber}`),
 
-  // RFP Upload & Parse
-  uploadRFP: (file) => {
+  getTags: () => client.get('/boilerplate/tags'),
+
+  createTag: (data) => client.post('/boilerplate/tags', data),
+
+  searchBoilerplate: (query, params) =>
+    client.get('/boilerplate/search', { params: { q: query, ...params } }),
+
+  exportBoilerplate: () => client.get('/boilerplate/export'),
+
+  importBoilerplate: (data) => client.post('/boilerplate/import', data),
+
+  // ============================================================================
+  // RFP Upload & Parse (Module 2) - prefix: /api/rfp
+  // ============================================================================
+  uploadRFP: (file, metadata = {}) => {
     const formData = new FormData()
     formData.append('file', file)
+    // Append optional metadata as query params
+    const params = {}
+    if (metadata.title) params.title = metadata.title
+    if (metadata.funder_name) params.funder_name = metadata.funder_name
+    if (metadata.deadline) params.deadline = metadata.deadline
+    if (metadata.funding_amount) params.funding_amount = metadata.funding_amount
     return client.post('/rfp/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
+      params
     })
   },
 
-  listRFPs: (params) => client.get('/rfp/list', { params }),
+  listRFPs: (params) => client.get('/rfp/', { params }),
 
   getRFP: (id) => client.get(`/rfp/${id}`),
 
   getRequirements: (rfpId) => client.get(`/rfp/${rfpId}/requirements`),
 
+  updateRequirement: (rfpId, reqId, data) =>
+    client.put(`/rfp/${rfpId}/requirements/${reqId}`, data),
+
+  getRawText: (rfpId) => client.get(`/rfp/${rfpId}/raw-text`),
+
+  reparseRFP: (rfpId) => client.post(`/rfp/${rfpId}/reparse`),
+
   deleteRFP: (id) => client.delete(`/rfp/${id}`),
 
-  updateRFPParsing: (id, data) => client.put(`/rfp/${id}`, data),
+  // ============================================================================
+  // Crosswalk Engine (Module 3) - prefix: /api/crosswalk
+  // ============================================================================
+  generateCrosswalk: (rfpId) => client.post(`/crosswalk/generate/${rfpId}`),
 
-  // Crosswalk Engine
-  generateCrosswalk: (rfpId) => client.post('/crosswalk/generate', { rfp_id: rfpId }),
+  getCrosswalk: (rfpId, params) => client.get(`/crosswalk/${rfpId}`, { params }),
 
-  getCrosswalk: (id) => client.get(`/crosswalk/${id}`),
+  getCrosswalkMatrix: (rfpId) => client.get(`/crosswalk/${rfpId}/matrix`),
 
-  getMatrix: (rfpId) => client.get(`/crosswalk/matrix/${rfpId}`),
+  updateCrosswalkMapping: (mapId, data) => client.put(`/crosswalk/map/${mapId}`, data),
 
-  updateMapping: (id, data) => client.put(`/crosswalk/mapping/${id}`, data),
+  approveCrosswalkMapping: (mapId) => client.post(`/crosswalk/map/${mapId}/approve`),
 
-  approveMapping: (id) => client.post(`/crosswalk/mapping/${id}/approve`),
+  regenerateCrosswalk: (rfpId) => client.post(`/crosswalk/${rfpId}/regenerate`),
 
-  exportCrosswalk: (rfpId) => client.get(`/crosswalk/export/${rfpId}`, { responseType: 'blob' }),
+  exportCrosswalk: (rfpId, format = 'json') =>
+    client.get(`/crosswalk/${rfpId}/export`, { params: { format } }),
 
-  // Grant Plan Generator
-  generatePlan: (data) => client.post('/plan/generate', data),
+  getCrosswalkSummary: (rfpId) => client.get(`/crosswalk/${rfpId}/summary`),
 
-  listPlans: (params) => client.get('/plan/list', { params }),
+  // ============================================================================
+  // Grant Plan Generator (Module 4) - prefix: /api/plans
+  // ============================================================================
+  generatePlan: (rfpId, planTitle) =>
+    client.post(`/plans/generate/${rfpId}`, null, { params: planTitle ? { plan_title: planTitle } : {} }),
 
-  getPlan: (id) => client.get(`/plan/${id}`),
+  listPlans: (params) => client.get('/plans/', { params }),
 
-  updatePlanSection: (planId, sectionId, data) => client.put(`/plan/${planId}/section/${sectionId}`, data),
+  getPlan: (id) => client.get(`/plans/${id}`),
 
-  updatePlanStatus: (id, status) => client.put(`/plan/${id}/status`, { status }),
+  getPlanSections: (planId) => client.get(`/plans/${planId}/sections`),
 
-  getCompliance: (planId) => client.get(`/plan/${planId}/compliance`),
+  updatePlanSection: (planId, sectionId, data) =>
+    client.put(`/plans/${planId}/sections/${sectionId}`, data),
 
-  exportPlan: (id) => client.get(`/plan/${id}/export`, { responseType: 'blob' }),
+  updatePlanStatus: (planId, status) =>
+    client.put(`/plans/${planId}/status`, null, { params: { status } }),
 
-  // Dashboard
-  getOverview: () => client.get('/dashboard/overview'),
+  getPlanCompliance: (planId) => client.get(`/plans/${planId}/compliance`),
 
-  getGaps: (rfpId) => client.get(`/dashboard/gaps/${rfpId}`),
+  exportPlan: (planId, format = 'json') =>
+    client.get(`/plans/${planId}/export`, { params: { format } }),
 
-  getRisks: (rfpId) => client.get(`/dashboard/risks/${rfpId}`),
+  deletePlan: (planId) => client.delete(`/plans/${planId}`),
 
-  getRecommendations: (rfpId) => client.get(`/dashboard/recommendations/${rfpId}`),
+  // ============================================================================
+  // Dashboard (Module 5) - prefix: /api/dashboard
+  // ============================================================================
+  getDashboardOverview: (rfpId) => client.get(`/dashboard/${rfpId}/overview`),
 
-  getSummary: () => client.get('/dashboard/summary'),
+  getDashboardSummary: () => client.get('/dashboard/summary'),
 
-  // AI Draft Framework
-  generateOutline: (planId) => client.post(`/ai/outline/${planId}`),
+  getGapAnalysis: (rfpId) => client.get(`/dashboard/${rfpId}/gaps`),
 
-  generateInsertBlock: (planId, sectionId) => client.post(`/ai/insert-block/${planId}/${sectionId}`),
+  getRiskDistribution: (rfpId) => client.get(`/dashboard/${rfpId}/risks`),
 
-  generateComparison: (planId, sectionId) => client.post(`/ai/comparison/${planId}/${sectionId}`),
+  getAlignmentScores: (rfpId) => client.get(`/dashboard/${rfpId}/scores`),
 
-  generateJustification: (planId, sectionId) => client.post(`/ai/justification/${planId}/${sectionId}`),
+  getRecommendations: (rfpId, priority) =>
+    client.get(`/dashboard/${rfpId}/recommendations`, { params: priority ? { priority } : {} }),
 
-  generateDraftFramework: (planId) => client.post(`/ai/draft-framework/${planId}`)
+  getRiskTimeline: (rfpId) => client.get(`/dashboard/${rfpId}/timeline`),
+
+  // ============================================================================
+  // AI Draft Framework (Module 6) - prefix: /api/ai
+  // ============================================================================
+  generateOutline: (planId, params = {}) =>
+    client.post(`/ai/outline/${planId}`, null, { params }),
+
+  generateInsertBlock: (params) =>
+    client.post('/ai/insert-block', null, { params }),
+
+  generateComparison: (params) =>
+    client.post('/ai/comparison', null, { params }),
+
+  generateJustification: (params) =>
+    client.post('/ai/justification', null, { params }),
+
+  generateDraftFramework: (planId, params = {}) =>
+    client.post(`/ai/draft-framework/${planId}`, null, { params }),
+
+  getSavedDrafts: (planId, blockType) =>
+    client.get(`/ai/drafts/${planId}`, { params: blockType ? { block_type: blockType } : {} })
 }
 
 export default client

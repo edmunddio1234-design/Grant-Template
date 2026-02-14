@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Download, Filter } from 'lucide-react'
 import RiskBadge from '../components/common/RiskBadge'
 import Modal from '../components/common/Modal'
 import toast from 'react-hot-toast'
+import { apiClient } from '../api/client'
 
 const mockRFPs = [
   { id: 1, name: 'Community Foundation Grant 2024' },
@@ -93,6 +94,30 @@ export default function CrosswalkEngine() {
   const [showModal, setShowModal] = useState(false)
   const [editingMapping, setEditingMapping] = useState(null)
 
+  // Fetch crosswalk data from API when RFP changes
+  useEffect(() => {
+    async function fetchCrosswalk() {
+      try {
+        const res = await apiClient.getCrosswalkMatrix(selectedRFP)
+        const data = res.data
+        if (Array.isArray(data) && data.length > 0) {
+          setMappings(data.map(m => ({
+            id: m.id,
+            requirement: m.requirement_text || m.requirement || '',
+            boilerplateMatches: m.matched_sections || m.boilerplate_matches || [],
+            riskLevel: m.risk_level || 'yellow',
+            alignmentScore: m.alignment_score || 0,
+            notes: m.notes || '',
+            status: m.status || 'pending'
+          })))
+        }
+      } catch (err) {
+        console.log('Crosswalk API unavailable, using mock data:', err.message)
+      }
+    }
+    fetchCrosswalk()
+  }, [selectedRFP])
+
   const filteredMappings = useMemo(() => {
     if (riskFilter === 'all') return mappings
     return mappings.filter((m) => m.riskLevel === riskFilter)
@@ -107,7 +132,12 @@ export default function CrosswalkEngine() {
     }
   }, [mappings])
 
-  const handleApproveMapping = (id) => {
+  const handleApproveMapping = async (id) => {
+    try {
+      await apiClient.approveCrosswalkMapping(id)
+    } catch (err) {
+      console.log('Approve API failed, updating locally:', err.message)
+    }
     const updated = mappings.map((m) =>
       m.id === id ? { ...m, status: 'approved' } : m
     )
@@ -141,8 +171,14 @@ export default function CrosswalkEngine() {
     }
   }
 
-  const handleExport = () => {
-    toast.success('Exporting crosswalk matrix as CSV')
+  const handleExport = async () => {
+    try {
+      await apiClient.exportCrosswalk(selectedRFP, 'csv')
+      toast.success('Exporting crosswalk matrix as CSV')
+    } catch (err) {
+      console.log('Export API failed:', err.message)
+      toast.success('Exporting crosswalk matrix as CSV (demo)')
+    }
   }
 
   return (

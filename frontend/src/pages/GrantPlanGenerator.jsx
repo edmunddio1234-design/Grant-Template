@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Download, Printer, CheckCircle, Circle, AlertCircle } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import StatusIndicator from '../components/common/StatusIndicator'
 import toast from 'react-hot-toast'
+import { apiClient } from '../api/client'
 
 const mockPlans = [
   {
@@ -52,25 +53,69 @@ export default function GrantPlanGenerator() {
     programFocus: 'All Programs'
   })
 
-  const handleGeneratePlan = () => {
+  // Fetch plans from API on mount
+  useEffect(() => {
+    async function fetchPlans() {
+      try {
+        const res = await apiClient.listPlans({ limit: 50 })
+        const data = res.data
+        const items = data.items || data.results || data
+        if (Array.isArray(items) && items.length > 0) {
+          setPlans(items.map(p => ({
+            id: p.id,
+            name: p.title || p.name,
+            rfp: p.rfp_title || p.rfp || '',
+            status: p.status || 'draft',
+            createdDate: p.created_at ? p.created_at.split('T')[0] : '',
+            lastModified: p.updated_at ? p.updated_at.split('T')[0] : '',
+            wordCount: p.total_word_count || p.wordCount || 0,
+            wordTarget: p.total_word_target || p.wordTarget || 5000
+          })))
+        }
+      } catch (err) {
+        console.log('Plans API unavailable, using mock data:', err.message)
+      }
+    }
+    fetchPlans()
+  }, [])
+
+  const handleGeneratePlan = async () => {
     if (!formData.rfpId) {
       toast.error('Please select an RFP')
       return
     }
 
-    const newPlan = {
-      id: Math.max(...plans.map((p) => p.id)) + 1,
-      name: `New Plan - ${new Date().toLocaleDateString()}`,
-      rfp: 'Community Foundation Grant 2024',
-      status: 'draft',
-      createdDate: new Date().toISOString().split('T')[0],
-      lastModified: new Date().toISOString().split('T')[0],
-      wordCount: 0,
-      wordTarget: 5000
+    try {
+      const res = await apiClient.generatePlan(formData.rfpId, `New Plan - ${new Date().toLocaleDateString()}`)
+      const generated = res.data
+      const newPlan = {
+        id: generated.id || Math.max(0, ...plans.map((p) => typeof p.id === 'number' ? p.id : 0)) + 1,
+        name: generated.title || `New Plan - ${new Date().toLocaleDateString()}`,
+        rfp: generated.rfp_title || 'Community Foundation Grant 2024',
+        status: generated.status || 'draft',
+        createdDate: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString().split('T')[0],
+        wordCount: 0,
+        wordTarget: generated.total_word_target || 5000
+      }
+      setPlans([newPlan, ...plans])
+      toast.success('Plan generated successfully')
+    } catch (err) {
+      console.log('Generate API failed, adding locally:', err.message)
+      const newPlan = {
+        id: Math.max(0, ...plans.map((p) => typeof p.id === 'number' ? p.id : 0)) + 1,
+        name: `New Plan - ${new Date().toLocaleDateString()}`,
+        rfp: 'Community Foundation Grant 2024',
+        status: 'draft',
+        createdDate: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString().split('T')[0],
+        wordCount: 0,
+        wordTarget: 5000
+      }
+      setPlans([newPlan, ...plans])
+      toast.success('Plan generated locally')
     }
-    setPlans([newPlan, ...plans])
     setShowGenerateModal(false)
-    toast.success('Plan generated successfully')
   }
 
   const handleUpdateStatus = (planId, newStatus) => {

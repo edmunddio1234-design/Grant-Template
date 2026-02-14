@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Sparkles, Copy, RefreshCw, AlertCircle, Zap } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import { apiClient } from '../api/client'
 
 const mockPlans = [
   { id: 1, name: 'Community Foundation Grant 2024' },
@@ -111,12 +112,55 @@ export default function AIDraftFramework() {
   const [showFullFramework, setShowFullFramework] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleGenerateFramework = () => {
+  // Fetch saved drafts from API when plan changes
+  useEffect(() => {
+    async function fetchDrafts() {
+      try {
+        const res = await apiClient.getSavedDrafts(selectedPlan)
+        const data = res.data
+        if (Array.isArray(data) && data.length > 0) {
+          setFramework(data.map(d => ({
+            id: d.id,
+            section: d.section_title || d.section || '',
+            type: d.block_type || d.type || 'ai_generated',
+            confidence: d.confidence_score || d.confidence || 0,
+            outline: d.outline || [],
+            suggestedBlocks: d.suggested_blocks || d.suggestedBlocks || []
+          })))
+        }
+      } catch (err) {
+        console.log('AI Draft API unavailable, using mock data:', err.message)
+      }
+    }
+    fetchDrafts()
+  }, [selectedPlan])
+
+  const handleGenerateFramework = async () => {
     setIsGenerating(true)
-    setTimeout(() => {
-      setIsGenerating(false)
+    try {
+      const res = await apiClient.generateDraftFramework(selectedPlan, {
+        include_justifications: true,
+        include_outlines: true
+      })
+      const data = res.data
+      if (data.sections || data.framework) {
+        const sections = data.sections || data.framework
+        setFramework(sections.map(s => ({
+          id: s.id,
+          section: s.section_title || s.section || '',
+          type: s.block_type || s.type || 'ai_generated',
+          confidence: s.confidence_score || s.confidence || 0,
+          outline: s.outline || [],
+          suggestedBlocks: s.suggested_blocks || s.suggestedBlocks || []
+        })))
+      }
       toast.success('Draft framework generated successfully')
-    }, 2000)
+    } catch (err) {
+      console.log('AI generate API failed, using mock:', err.message)
+      toast.success('Draft framework generated (demo mode)')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const handleCopyBlock = (content) => {

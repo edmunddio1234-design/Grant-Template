@@ -4,6 +4,7 @@ import { TrendingUp, FileText, Zap, Target, Upload, Plus } from 'lucide-react'
 import StatusIndicator from '../components/common/StatusIndicator'
 import RiskBadge from '../components/common/RiskBadge'
 import useAppStore from '../stores/appStore'
+import { apiClient } from '../api/client'
 
 const mockDashboardData = {
   stats: [
@@ -18,30 +19,9 @@ const mockDashboardData = {
     { name: 'High Risk', value: 2, fill: '#EF4444' }
   ],
   recentRFPs: [
-    {
-      id: 1,
-      name: 'Community Foundation Grant 2024',
-      uploadDate: '2024-02-10',
-      status: 'parsed',
-      requirements: 23,
-      alignmentScore: 78
-    },
-    {
-      id: 2,
-      name: 'Department of Family Services RFP',
-      uploadDate: '2024-02-08',
-      status: 'analyzing',
-      requirements: 31,
-      alignmentScore: 65
-    },
-    {
-      id: 3,
-      name: 'Local Nonprofit Partnership Grant',
-      uploadDate: '2024-02-05',
-      status: 'uploaded',
-      requirements: 18,
-      alignmentScore: 82
-    }
+    { id: 1, name: 'Community Foundation Grant 2024', uploadDate: '2024-02-10', status: 'parsed', requirements: 23, alignmentScore: 78 },
+    { id: 2, name: 'Department of Family Services RFP', uploadDate: '2024-02-08', status: 'analyzing', requirements: 31, alignmentScore: 65 },
+    { id: 3, name: 'Local Nonprofit Partnership Grant', uploadDate: '2024-02-05', status: 'uploaded', requirements: 18, alignmentScore: 82 }
   ],
   activityFeed: [
     { id: 1, action: 'Uploaded RFP', description: 'Community Foundation Grant 2024', timestamp: '2 hours ago' },
@@ -53,12 +33,41 @@ const mockDashboardData = {
 
 export default function Dashboard() {
   const { setDashboardLoading } = useAppStore()
-  const [dashboardData] = useState(mockDashboardData)
+  const [dashboardData, setDashboardData] = useState(mockDashboardData)
+  const [loading, setLoading] = useState(true)
+  const [apiConnected, setApiConnected] = useState(false)
 
   useEffect(() => {
-    setDashboardLoading(true)
-    const timer = setTimeout(() => setDashboardLoading(false), 500)
-    return () => clearTimeout(timer)
+    async function fetchDashboard() {
+      setDashboardLoading(true)
+      setLoading(true)
+      try {
+        const summaryRes = await apiClient.getDashboardSummary()
+        const summary = summaryRes.data
+
+        const apiData = {
+          stats: [
+            { label: 'Total Boilerplate Sections', value: summary.total_boilerplate_sections ?? mockDashboardData.stats[0].value, icon: Target, color: 'bg-blue-50 text-foam-primary' },
+            { label: 'Active RFPs', value: summary.active_rfps ?? mockDashboardData.stats[1].value, icon: FileText, color: 'bg-green-50 text-foam-green' },
+            { label: 'Pending Crosswalks', value: summary.pending_crosswalks ?? mockDashboardData.stats[2].value, icon: TrendingUp, color: 'bg-amber-50 text-foam-amber' },
+            { label: 'Plans Generated', value: summary.plans_generated ?? mockDashboardData.stats[3].value, icon: Zap, color: 'bg-purple-50 text-purple-600' }
+          ],
+          riskDistribution: summary.risk_distribution || mockDashboardData.riskDistribution,
+          recentRFPs: summary.recent_rfps || mockDashboardData.recentRFPs,
+          activityFeed: summary.activity_feed || mockDashboardData.activityFeed
+        }
+        setDashboardData(apiData)
+        setApiConnected(true)
+      } catch (err) {
+        console.log('Dashboard API unavailable, using mock data:', err.message)
+        setDashboardData(mockDashboardData)
+        setApiConnected(false)
+      } finally {
+        setDashboardLoading(false)
+        setLoading(false)
+      }
+    }
+    fetchDashboard()
   }, [])
 
   const statusConfig = {
@@ -72,6 +81,12 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-8">
+      {!loading && !apiConnected && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+          Backend API is waking up or unavailable — showing demo data. The Render free tier may take 30-60s to spin up.
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardData.stats.map((stat, index) => {
@@ -108,7 +123,6 @@ export default function Dashboard() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Risk Distribution */}
         <div className="card">
           <div className="p-6 border-b border-gray-200">
             <h3 className="subsection-title">Risk Distribution</h3>
@@ -117,16 +131,7 @@ export default function Dashboard() {
           <div className="p-6">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie
-                  data={dashboardData.riskDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
+                <Pie data={dashboardData.riskDistribution} cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}`} outerRadius={100} fill="#8884d8" dataKey="value">
                   {dashboardData.riskDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
@@ -137,7 +142,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Activity */}
         <div className="card">
           <div className="p-6 border-b border-gray-200">
             <h3 className="subsection-title">Recent Activity</h3>
@@ -178,8 +182,8 @@ export default function Dashboard() {
             <tbody>
               {dashboardData.recentRFPs.map((rfp) => (
                 <tr key={rfp.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                  <td className="table-cell font-medium text-gray-900">{rfp.name}</td>
-                  <td className="table-cell text-gray-600">{rfp.uploadDate}</td>
+                  <td className="table-cell font-medium text-gray-900">{rfp.name || rfp.title}</td>
+                  <td className="table-cell text-gray-600">{rfp.uploadDate || rfp.upload_date}</td>
                   <td className="table-cell">
                     <StatusIndicator status={statusConfig[rfp.status]} size="sm" />
                   </td>
@@ -187,12 +191,9 @@ export default function Dashboard() {
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
                       <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-foam-primary rounded-full transition-all"
-                          style={{ width: `${rfp.alignmentScore}%` }}
-                        />
+                        <div className="h-full bg-foam-primary rounded-full transition-all" style={{ width: `${rfp.alignmentScore || rfp.alignment_score || 0}%` }} />
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{rfp.alignmentScore}%</span>
+                      <span className="text-sm font-medium text-gray-900">{rfp.alignmentScore || rfp.alignment_score || 0}%</span>
                     </div>
                   </td>
                 </tr>
