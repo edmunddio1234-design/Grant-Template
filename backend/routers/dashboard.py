@@ -213,22 +213,28 @@ async def get_dashboard_summary(
             if rfp.deadline and rfp.deadline > today and (rfp.deadline - today).days <= 30
         ]
 
+        # Count gaps requiring attention (can't use await in generator)
+        total_gaps = 0
+        for rfp in rfps:
+            gap_result = await db.execute(
+                select(func.count(CrosswalkMap.id))
+                .join(RFPRequirement)
+                .where(
+                    and_(
+                        RFPRequirement.rfp_id == rfp.id,
+                        CrosswalkMap.gap_flag == True,
+                    )
+                )
+            )
+            total_gaps += gap_result.scalar() or 0
+
         summary = RiskDashboardSummary(
             total_rfps=len(rfps),
             high_risk_count=high_risk_count,
             medium_risk_count=medium_risk_count,
             low_risk_count=low_risk_count,
             average_compliance_score=round(avg_compliance, 2),
-            gaps_requiring_attention=sum(
-                sum(1 for m in (
-                    await db.execute(
-                        select(CrosswalkMap).join(RFPRequirement).where(
-                            and_(RFPRequirement.rfp_id == rfp.id, CrosswalkMap.gap_flag == True)
-                        )
-                    )
-                ).scalars().all())
-                for rfp in rfps
-            ),
+            gaps_requiring_attention=total_gaps,
             plans_in_progress=len(plans),
             upcoming_deadlines=upcoming,
         )
