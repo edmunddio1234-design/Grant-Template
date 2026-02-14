@@ -54,19 +54,7 @@ def get_ai_service() -> Optional[AIDraftService]:
 
     _ai_init_attempted = True
 
-    # Try OpenAI first, then Anthropic
-    if settings.OPENAI_API_KEY:
-        try:
-            _ai_service = AIDraftService(
-                provider=AIProvider.OPENAI,
-                api_key=settings.OPENAI_API_KEY,
-                model=settings.OPENAI_MODEL or "gpt-4o",
-            )
-            logger.info("AI service initialized with OpenAI")
-            return _ai_service
-        except Exception as e:
-            logger.error(f"Failed to init OpenAI AI service: {e}")
-
+    # Try Anthropic first (preferred), then OpenAI as fallback
     if settings.ANTHROPIC_API_KEY:
         try:
             _ai_service = AIDraftService(
@@ -78,6 +66,18 @@ def get_ai_service() -> Optional[AIDraftService]:
             return _ai_service
         except Exception as e:
             logger.error(f"Failed to init Anthropic AI service: {e}")
+
+    if settings.OPENAI_API_KEY:
+        try:
+            _ai_service = AIDraftService(
+                provider=AIProvider.OPENAI,
+                api_key=settings.OPENAI_API_KEY,
+                model=settings.OPENAI_MODEL or "gpt-4o",
+            )
+            logger.info("AI service initialized with OpenAI")
+            return _ai_service
+        except Exception as e:
+            logger.error(f"Failed to init OpenAI AI service: {e}")
 
     logger.warning("No AI API key configured — AI endpoints will use placeholder content")
     return None

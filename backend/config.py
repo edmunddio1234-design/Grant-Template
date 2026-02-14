@@ -86,7 +86,7 @@ class Settings(BaseSettings):
     OPENAI_TEMPERATURE: float = Field(default=0.7, ge=0.0, le=2.0)
 
     ANTHROPIC_API_KEY: Optional[str] = None
-    ANTHROPIC_MODEL: str = "claude-3-opus-20240229"
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
 
     # Redis Configuration
     REDIS_URL: str = "redis://localhost:6379/0"
