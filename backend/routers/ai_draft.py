@@ -5,6 +5,7 @@ Routes for AI-powered content generation including section outlines, insert bloc
 comparisons, justifications, and complete draft frameworks.
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -565,7 +566,8 @@ async def generate_draft_framework(
         ai_svc = get_ai_service()
         framework_sections = {}
 
-        for section in plan.sections:
+        async def generate_single_section(section):
+            """Generate framework for a single section (runs in parallel)."""
             section_framework = {
                 "section_id": str(section.id),
                 "section_title": section.section_title,
@@ -575,58 +577,69 @@ async def generate_draft_framework(
 
             if ai_svc:
                 try:
-                    prompt = f"""Generate a comprehensive draft framework for a grant application section.
+                    prompt = f"""Generate a comprehensive draft for the "{section.section_title}" section of a grant application for Fathers On A Mission (FOAM).
 
-Section: {section.section_title}
-Section Order: {section.section_order}
-Word Limit: {section.word_limit or 500}
 Plan: {plan.title}
+Section Order: {section.section_order}
+Target Length: {section.word_limit or 500} words
 
-Generate:
-1. A detailed 5-7 point outline specific to FOAM and this section
-2. A suggested opening paragraph (100-150 words) tailored to this section
-3. 3-4 alignment notes connecting to RFP requirements
-4. 3-4 customization recommendations specific to FOAM's programs
+Write a complete, detailed draft (not just an outline) for this section. Include:
+- Specific program details about FOAM
+- Measurable outcomes and metrics
+- Professional grant-writing language
+- At least 200 words of actual narrative content
 
-Format your response as follows:
+Also provide:
+- A 5-point outline
+- 3 alignment notes connecting to funder requirements
+- 3 customization recommendations
+
+Format:
+CONTENT:
+[full draft narrative - minimum 200 words]
+
 OUTLINE:
-[numbered outline items]
-
-SUGGESTED CONTENT:
-[opening paragraph]
+[numbered items]
 
 ALIGNMENT NOTES:
-[numbered alignment notes]
+[numbered notes]
 
 CUSTOMIZATION:
-[numbered customization recommendations]"""
+[numbered recommendations]"""
 
                     ai_content = await ai_svc._call_api([
                         {"role": "user", "content": prompt}
                     ], max_tokens=1500)
 
-                    # Parse AI response into structured sections
+                    # Parse AI response
                     parts = ai_content.split("\n")
-                    current_section_name = None
-                    parsed = {"outline": [], "content": "", "alignment": [], "customization": []}
+                    current_part = None
+                    parsed = {"content": "", "outline": [], "alignment": [], "customization": []}
 
                     for line in parts:
                         stripped = line.strip()
-                        if stripped.upper().startswith("OUTLINE"):
-                            current_section_name = "outline"
-                        elif stripped.upper().startswith("SUGGESTED CONTENT"):
-                            current_section_name = "content"
-                        elif stripped.upper().startswith("ALIGNMENT"):
-                            current_section_name = "alignment"
-                        elif stripped.upper().startswith("CUSTOMIZATION"):
-                            current_section_name = "customization"
-                        elif stripped and current_section_name:
+                        upper = stripped.upper()
+                        if upper.startswith("CONTENT") and ":" in stripped:
+                            current_part = "content"
+                        elif upper.startswith("OUTLINE") and ":" in stripped:
+                            current_part = "outline"
+                        elif upper.startswith("ALIGNMENT") and ":" in stripped:
+                            current_part = "alignment"
+                        elif upper.startswith("CUSTOMIZATION") and ":" in stripped:
+                            current_part = "customization"
+                        elif upper.startswith("SUGGESTED CONTENT") and ":" in stripped:
+                            current_part = "content"
+                        elif stripped and current_part:
                             clean = stripped.lstrip("0123456789.-) *•")
                             if clean:
-                                if current_section_name == "content":
-                                    parsed["content"] += clean + " "
-                                elif current_section_name in parsed:
-                                    parsed[current_section_name].append(clean)
+                                if current_part == "content":
+                                    parsed["content"] += clean + "\n"
+                                elif current_part in parsed:
+                                    parsed[current_part].append(clean)
+
+                    # If no CONTENT: header was found, treat the whole response as content
+                    if not parsed["content"].strip() and ai_content.strip():
+                        parsed["content"] = ai_content.strip()
 
                     if include_outlines:
                         section_framework["outline"] = parsed["outline"][:7] or [
@@ -661,7 +674,18 @@ CUSTOMIZATION:
             else:
                 _fill_placeholder_framework(section_framework, section, include_outlines, include_justifications)
 
-            framework_sections[str(section.id)] = section_framework
+            return str(section.id), section_framework
+
+        # Generate all sections IN PARALLEL for speed
+        tasks = [generate_single_section(section) for section in plan.sections]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, Exception):
+                logger.warning(f"Section generation failed: {result}")
+                continue
+            section_id, section_framework = result
+            framework_sections[section_id] = section_framework
 
         await log_audit(
             db, ActionTypeEnum.CREATE, "AIDraftFramework", str(plan_id),
