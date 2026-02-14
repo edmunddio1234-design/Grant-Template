@@ -13,6 +13,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
@@ -21,7 +22,10 @@ from models import (
     GrantPlan,
     GrantPlanSection,
     RFP,
+    RFPRequirement,
     BoilerplateSection,
+    CrosswalkMap,
+    GapAnalysis,
     ActionTypeEnum,
     AuditLog,
 )
@@ -555,8 +559,10 @@ async def generate_draft_framework(
     include_outlines: bool = Query(True, description="Include section outlines"),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Generate a complete AI-powered draft framework for a grant plan."""
+    """Generate a complete AI-powered draft framework for a grant plan,
+    using real RFP requirements, boilerplate content, and crosswalk data."""
     try:
+        # ── Load plan with sections ──
         plan = await db.get(GrantPlan, str(plan_id))
         if not plan:
             logger.warning(f"Plan not found: {plan_id}")
@@ -566,8 +572,109 @@ async def generate_draft_framework(
         ai_svc = get_ai_service()
         framework_sections = {}
 
+        # ── Load the linked RFP + its requirements ──
+        rfp_context = ""
+        rfp_requirements_map = {}
+        if plan.rfp_id:
+            rfp_result = await db.execute(
+                select(RFP).options(selectinload(RFP.requirements)).where(RFP.id == str(plan.rfp_id))
+            )
+            rfp = rfp_result.scalar_one_or_none()
+            if rfp:
+                rfp_context = f"RFP Title: {rfp.title}\n"
+                if rfp.funder_name:
+                    rfp_context += f"Funder: {rfp.funder_name}\n"
+                if rfp.funding_amount:
+                    rfp_context += f"Funding Amount: ${rfp.funding_amount:,.0f}\n"
+                if rfp.deadline:
+                    rfp_context += f"Deadline: {rfp.deadline.strftime('%B %d, %Y')}\n"
+                if rfp.eligibility_notes:
+                    rfp_context += f"Eligibility: {rfp.eligibility_notes[:500]}\n"
+
+                # Build a map of requirements by section name for matching
+                if rfp.requirements:
+                    for req in rfp.requirements:
+                        rfp_requirements_map[req.section_name.lower().strip()] = {
+                            "description": req.description or "",
+                            "word_limit": req.word_limit,
+                            "scoring_weight": req.scoring_weight,
+                            "formatting_notes": req.formatting_notes or "",
+                            "required_attachments": req.required_attachments or [],
+                        }
+
+                    rfp_context += f"\nRFP has {len(rfp.requirements)} required sections.\n"
+
+                # Include raw text summary (first 3000 chars) if available
+                if rfp.raw_text:
+                    rfp_context += f"\n--- RFP CONTENT (excerpt) ---\n{rfp.raw_text[:3000]}\n---\n"
+
+        # ── Load all boilerplate content ──
+        boilerplate_context = ""
+        bp_result = await db.execute(
+            select(BoilerplateSection).where(BoilerplateSection.is_active == True)
+        )
+        boilerplate_sections = bp_result.scalars().all()
+        if boilerplate_sections:
+            bp_entries = []
+            for bp in boilerplate_sections:
+                entry = f"[{bp.section_title}]"
+                if bp.program_area:
+                    entry += f" (Program: {bp.program_area})"
+                if bp.content:
+                    entry += f"\n{bp.content[:800]}"
+                bp_entries.append(entry)
+            boilerplate_context = "\n\n".join(bp_entries[:15])  # Cap at 15 sections
+
+        # ── Load crosswalk mappings for this RFP ──
+        crosswalk_context = ""
+        if plan.rfp_id:
+            cw_result = await db.execute(
+                select(CrosswalkMap)
+                .options(
+                    selectinload(CrosswalkMap.rfp_requirement),
+                    selectinload(CrosswalkMap.boilerplate_section),
+                )
+                .join(RFPRequirement)
+                .where(RFPRequirement.rfp_id == str(plan.rfp_id))
+            )
+            crosswalk_maps = cw_result.scalars().all()
+            if crosswalk_maps:
+                cw_entries = []
+                for cw in crosswalk_maps:
+                    req_name = cw.rfp_requirement.section_name if cw.rfp_requirement else "Unknown"
+                    bp_name = cw.boilerplate_section.section_title if cw.boilerplate_section else "None"
+                    cw_entries.append(
+                        f"  - RFP Req: '{req_name}' → Boilerplate: '{bp_name}' "
+                        f"(alignment: {cw.alignment_score}, gap: {cw.gap_flag}, risk: {cw.risk_level})"
+                    )
+                crosswalk_context = "Crosswalk Mappings:\n" + "\n".join(cw_entries[:20])
+
+        # ── Load gap analysis if available ──
+        gap_context = ""
+        if plan.rfp_id:
+            gap_result = await db.execute(
+                select(GapAnalysis).where(GapAnalysis.rfp_id == str(plan.rfp_id)).order_by(GapAnalysis.analysis_date.desc()).limit(1)
+            )
+            gap = gap_result.scalar_one_or_none()
+            if gap:
+                gap_context = f"Gap Analysis (Risk: {gap.overall_risk_level}):\n"
+                if gap.weak_alignments:
+                    gap_context += f"  Weak Alignments: {', '.join(gap.weak_alignments[:5])}\n"
+                if gap.missing_metrics:
+                    gap_context += f"  Missing Metrics: {', '.join(gap.missing_metrics[:5])}\n"
+                if gap.match_gaps:
+                    gap_context += f"  Match Gaps: {', '.join(gap.match_gaps[:5])}\n"
+
+        logger.info(
+            f"Draft context loaded: RFP={'yes' if rfp_context else 'no'}, "
+            f"requirements={len(rfp_requirements_map)}, "
+            f"boilerplate={len(boilerplate_sections) if boilerplate_sections else 0}, "
+            f"crosswalk={'yes' if crosswalk_context else 'no'}, "
+            f"gaps={'yes' if gap_context else 'no'}"
+        )
+
         async def generate_single_section(section):
-            """Generate framework for a single section (runs in parallel)."""
+            """Generate framework for a single section using real data."""
             section_framework = {
                 "section_id": str(section.id),
                 "section_title": section.section_title,
@@ -577,96 +684,119 @@ async def generate_draft_framework(
 
             if ai_svc:
                 try:
-                    prompt = f"""Generate a comprehensive draft for the "{section.section_title}" section of a grant application for Fathers On A Mission (FOAM).
+                    # Find matching RFP requirement for this section
+                    section_lower = section.section_title.lower().strip()
+                    matched_req = rfp_requirements_map.get(section_lower)
+                    # Try partial matching if exact match fails
+                    if not matched_req:
+                        for req_name, req_data in rfp_requirements_map.items():
+                            if req_name in section_lower or section_lower in req_name:
+                                matched_req = req_data
+                                break
 
-Plan: {plan.title}
-Section Order: {section.section_order}
+                    # Find linked boilerplate content
+                    linked_bp = ""
+                    if section.boilerplate_section_id:
+                        bp = await db.get(BoilerplateSection, str(section.boilerplate_section_id))
+                        if bp and bp.content:
+                            linked_bp = bp.content[:1500]
+
+                    # Build the data-rich prompt
+                    prompt = f"""Write a complete grant narrative draft for the "{section.section_title}" section.
+
+=== GRANT APPLICATION CONTEXT ===
+{rfp_context if rfp_context else "No RFP data available — write a general grant section."}
+"""
+                    if matched_req:
+                        prompt += f"""
+=== FUNDER'S REQUIREMENT FOR THIS SECTION ===
+Description: {matched_req['description'][:1000]}
+Word Limit: {matched_req['word_limit'] or section.word_limit or 500}
+Scoring Weight: {matched_req['scoring_weight'] or 'Not specified'}
+Formatting Notes: {matched_req['formatting_notes'][:300]}
+Required Attachments: {', '.join(matched_req['required_attachments']) if matched_req['required_attachments'] else 'None'}
+
+YOU MUST directly address every point in this requirement description.
+"""
+
+                    if linked_bp:
+                        prompt += f"""
+=== EXISTING BOILERPLATE CONTENT (adapt and customize this) ===
+{linked_bp}
+"""
+
+                    if boilerplate_context:
+                        prompt += f"""
+=== FOAM'S BOILERPLATE LIBRARY (reference for FOAM-specific details) ===
+{boilerplate_context[:2000]}
+"""
+
+                    if crosswalk_context:
+                        prompt += f"""
+=== ALIGNMENT ANALYSIS ===
+{crosswalk_context}
+"""
+
+                    if gap_context:
+                        prompt += f"""
+=== IDENTIFIED GAPS (address these in the narrative) ===
+{gap_context}
+"""
+
+                    if section.customization_notes:
+                        prompt += f"""
+=== CUSTOMIZATION NOTES ===
+{section.customization_notes[:500]}
+"""
+
+                    prompt += f"""
+=== WRITING INSTRUCTIONS ===
 Target Length: {section.word_limit or 500} words
+Write the actual grant narrative in prose format (paragraphs, not bullet points).
+Use professional grant-writing language.
+Include specific FOAM program names, real metrics, and concrete details.
+If boilerplate content was provided above, customize it to address the funder's specific requirements.
+If funder requirements were provided, make sure EVERY point is addressed.
 
-Write a complete, detailed draft (not just an outline) for this section. Include:
-- Specific program details about FOAM
-- Measurable outcomes and metrics
-- Professional grant-writing language
-- At least 200 words of actual narrative content
-
-Also provide:
-- A 5-point outline
-- 3 alignment notes connecting to funder requirements
-- 3 customization recommendations
-
-Format:
-CONTENT:
-[full draft narrative - minimum 200 words]
-
-OUTLINE:
-[numbered items]
-
-ALIGNMENT NOTES:
-[numbered notes]
-
-CUSTOMIZATION:
-[numbered recommendations]"""
+Respond with ONLY the narrative content — no headers, labels, or metadata. Just the grant text ready to paste into an application."""
 
                     ai_content = await ai_svc._call_api([
                         {"role": "user", "content": prompt}
-                    ], max_tokens=1500)
+                    ], max_tokens=2000)
 
-                    # Parse AI response
-                    parts = ai_content.split("\n")
-                    current_part = None
-                    parsed = {"content": "", "outline": [], "alignment": [], "customization": []}
-
-                    for line in parts:
-                        stripped = line.strip()
-                        upper = stripped.upper()
-                        if upper.startswith("CONTENT") and ":" in stripped:
-                            current_part = "content"
-                        elif upper.startswith("OUTLINE") and ":" in stripped:
-                            current_part = "outline"
-                        elif upper.startswith("ALIGNMENT") and ":" in stripped:
-                            current_part = "alignment"
-                        elif upper.startswith("CUSTOMIZATION") and ":" in stripped:
-                            current_part = "customization"
-                        elif upper.startswith("SUGGESTED CONTENT") and ":" in stripped:
-                            current_part = "content"
-                        elif stripped and current_part:
-                            clean = stripped.lstrip("0123456789.-) *•")
-                            if clean:
-                                if current_part == "content":
-                                    parsed["content"] += clean + "\n"
-                                elif current_part in parsed:
-                                    parsed[current_part].append(clean)
-
-                    # If no CONTENT: header was found, treat the whole response as content
-                    if not parsed["content"].strip() and ai_content.strip():
-                        parsed["content"] = ai_content.strip()
+                    # Clean response — just use the full content directly
+                    content = ai_content.strip()
 
                     if include_outlines:
-                        section_framework["outline"] = parsed["outline"][:7] or [
-                            "Opening statement and context",
-                            "Project approach and activities",
-                            "Target population details",
-                            "Timeline and milestones",
-                            "Expected outcomes and impact",
-                        ]
+                        section_framework["outline"] = []
 
                     if include_justifications:
-                        section_framework["suggested_content"] = parsed["content"].strip() or (
-                            f"AI-generated content for {section.section_title}."
-                        )
-                        section_framework["alignment_notes"] = parsed["alignment"][:4] or [
-                            "Directly addresses funder requirement",
-                            "Demonstrates organizational capacity",
-                            "Includes measurable outcomes",
-                        ]
+                        section_framework["suggested_content"] = content
+                        section_framework["alignment_notes"] = []
+                        if matched_req:
+                            section_framework["alignment_notes"].append(
+                                f"Addresses RFP requirement: {matched_req['description'][:120]}"
+                            )
+                        if linked_bp:
+                            section_framework["alignment_notes"].append("Customized from existing boilerplate content")
+                        if crosswalk_context:
+                            section_framework["alignment_notes"].append("Informed by crosswalk alignment analysis")
 
-                    section_framework["customization_notes"] = parsed["customization"][:4] or [
-                        "Tailor to Project Family Build's specific context",
-                        "Add organization-specific data and outcomes",
-                        "Include references to FOAM's mission",
-                    ]
+                    section_framework["customization_notes"] = []
+                    if gap_context:
+                        section_framework["customization_notes"].append("Review gap analysis items for completeness")
+                    if not matched_req:
+                        section_framework["customization_notes"].append("No matching RFP requirement found — verify section aligns with funder priorities")
+                    section_framework["customization_notes"].append("Review and add any organization-specific data not in boilerplate")
+
                     section_framework["source"] = "ai_generated"
                     section_framework["model"] = ai_svc.model
+                    section_framework["data_sources"] = {
+                        "rfp_requirement": bool(matched_req),
+                        "boilerplate": bool(linked_bp),
+                        "crosswalk": bool(crosswalk_context),
+                        "gap_analysis": bool(gap_context),
+                    }
 
                 except Exception as e:
                     error_msg = str(e)
