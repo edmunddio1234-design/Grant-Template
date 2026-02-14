@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Menu, Search, Bell, ChevronDown, LogOut } from 'lucide-react'
 import useAppStore from '../stores/appStore'
+import useAuthStore from '../stores/authStore'
 import clsx from 'clsx'
 
 const pageNames = {
@@ -14,13 +15,37 @@ const pageNames = {
   '/ai-framework': 'AI Draft Framework'
 }
 
+const roleLabels = {
+  admin: 'Admin',
+  grant_manager: 'Grant Manager',
+  reviewer: 'Reviewer',
+  viewer: 'Viewer',
+}
+
 export default function Header({ onMenuClick }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const { notificationCount } = useAppStore()
+  const { user, logout } = useAuthStore()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
 
   const pageName = pageNames[location.pathname] || 'Dashboard'
+
+  const userName = user?.name || 'FOAM User'
+  const userRole = roleLabels[user?.role] || user?.role || 'User'
+  const initials = userName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+
+  const handleLogout = () => {
+    logout()
+    setUserMenuOpen(false)
+    navigate('/login')
+  }
 
   return (
     <header className="border-b border-gray-200 bg-white shadow-sm sticky top-0 z-30">
@@ -79,7 +104,7 @@ export default function Header({ onMenuClick }) {
               className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <div className="w-8 h-8 bg-foam-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
-                FM
+                {initials}
               </div>
               <ChevronDown size={18} className="text-gray-600" />
             </button>
@@ -87,10 +112,13 @@ export default function Header({ onMenuClick }) {
             {userMenuOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
                 <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="font-semibold text-sm text-gray-900">FOAM Admin</p>
-                  <p className="text-xs text-gray-500">Grant Alignment Engine</p>
+                  <p className="font-semibold text-sm text-gray-900">{userName}</p>
+                  <p className="text-xs text-gray-500">{userRole}</p>
                 </div>
-                <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                >
                   <LogOut size={16} />
                   Logout
                 </button>

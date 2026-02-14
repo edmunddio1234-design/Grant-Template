@@ -11,12 +11,61 @@ const client = axios.create({
   timeout: 30000
 })
 
+// Request interceptor — inject auth token
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('authToken')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// Track if we're currently refreshing to avoid infinite loops
+let isRefreshing = false
+
 client.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  async (error) => {
+    const originalRequest = error.config
+
+    // If 401 and we haven't already tried refreshing for this request
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing) {
+      const refreshToken = localStorage.getItem('refreshToken')
+
+      // If we have a refresh token and this isn't the login or refresh endpoint itself
+      if (refreshToken && !originalRequest.url?.includes('/auth/login') && !originalRequest.url?.includes('/auth/refresh')) {
+        originalRequest._retry = true
+        isRefreshing = true
+
+        try {
+          const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+            refresh_token: refreshToken
+          })
+          const { access_token, refresh_token: newRefresh } = res.data
+          localStorage.setItem('authToken', access_token)
+          if (newRefresh) localStorage.setItem('refreshToken', newRefresh)
+
+          // Retry original request with new token
+          originalRequest.headers.Authorization = `Bearer ${access_token}`
+          isRefreshing = false
+          return client(originalRequest)
+        } catch {
+          isRefreshing = false
+          // Refresh failed — force logout
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('refreshToken')
+          localStorage.removeItem('authUser')
+          window.location.href = '/login'
+          return Promise.reject(error)
+        }
+      }
+
+      // No refresh token — redirect to login
       localStorage.removeItem('authToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('authUser')
       window.location.href = '/login'
+      return Promise.reject(error)
     }
 
     const rawDetail = error.response?.data?.detail
@@ -29,7 +78,7 @@ client.interceptors.response.use(
 
     if (error.response?.status >= 500) {
       toast.error('Server error: ' + message)
-    } else if (error.response?.status >= 400) {
+    } else if (error.response?.status >= 400 && error.response?.status !== 401) {
       toast.error(String(message))
     }
 
@@ -38,6 +87,20 @@ client.interceptors.response.use(
 )
 
 export const apiClient = {
+  // ============================================================================
+  // Authentication - prefix: /api/auth
+  // ============================================================================
+  login: (email, password) => client.post('/auth/login', { email, password }),
+
+  register: (email, name, password, role) =>
+    client.post('/auth/register', { email, name, password, role }),
+
+  refreshToken: (refresh_token) =>
+    client.post('/auth/refresh', { refresh_token }),
+
+  getMe: (token) =>
+    client.get('/auth/me', token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+
   // ============================================================================
   // Boilerplate Manager (Module 1) - prefix: /api/boilerplate
   // ============================================================================

@@ -15,6 +15,7 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
+from dependencies import get_current_user
 from models import (
     RFP,
     GapAnalysis,
@@ -25,6 +26,7 @@ from models import (
     RFPStatusEnum,
     AlignmentScoreEnum,
     GrantPlanStatusEnum,
+    User,
 )
 from schemas import (
     GapAnalysisRead,
@@ -49,6 +51,7 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 )
 async def get_rfp_dashboard_overview(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -143,6 +146,7 @@ async def get_rfp_dashboard_overview(
     status_code=status.HTTP_200_OK,
 )
 async def get_dashboard_summary(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> RiskDashboardSummary:
     """
@@ -262,6 +266,7 @@ async def get_dashboard_summary(
     status_code=status.HTTP_200_OK,
 )
 async def get_funder_breakdown(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -345,6 +350,7 @@ async def get_funder_breakdown(
 )
 async def get_gap_analysis(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> GapAnalysisRead:
     """
@@ -410,6 +416,7 @@ async def get_gap_analysis(
 )
 async def get_risk_distribution(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -493,6 +500,7 @@ async def get_risk_distribution(
 )
 async def get_alignment_scores(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -693,6 +701,7 @@ async def get_recommendations(
 )
 async def get_risk_timeline(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> List[Dict[str, Any]]:
     """

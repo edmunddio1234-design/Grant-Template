@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from database import get_db
+from dependencies import get_current_user
 from models import (
     BoilerplateCategory,
     BoilerplateSection,
@@ -25,6 +26,7 @@ from models import (
     BoilerplateSectionTag,
     AuditLog,
     ActionTypeEnum,
+    User,
 )
 from schemas import (
     BoilerplateCategoryCreate,
@@ -105,6 +107,7 @@ async def list_categories(
 )
 async def create_category(
     category_data: BoilerplateCategoryCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> BoilerplateCategoryRead:
     """
@@ -274,6 +277,7 @@ async def list_sections(
 )
 async def get_section(
     section_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> BoilerplateSectionRead:
     """
@@ -323,6 +327,7 @@ async def get_section(
 )
 async def create_section(
     section_data: BoilerplateSectionCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> BoilerplateSectionRead:
     """
@@ -400,6 +405,7 @@ async def create_section(
 async def update_section(
     section_id: UUID,
     section_data: BoilerplateSectionUpdate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> BoilerplateSectionRead:
     """
@@ -470,6 +476,7 @@ async def update_section(
 )
 async def delete_section(
     section_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
@@ -520,6 +527,7 @@ async def delete_section(
 )
 async def get_section_versions(
     section_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> List[BoilerplateVersionRead]:
     """
@@ -575,6 +583,7 @@ async def get_section_versions(
 async def restore_section_version(
     section_id: UUID,
     version_number: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> BoilerplateSectionRead:
     """
@@ -653,6 +662,7 @@ async def restore_section_version(
     status_code=status.HTTP_200_OK,
 )
 async def list_tags(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> List[TagRead]:
     """
@@ -689,6 +699,7 @@ async def list_tags(
 )
 async def create_tag(
     tag_data: TagCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> TagRead:
     """
@@ -835,6 +846,7 @@ async def search_boilerplate(
     status_code=status.HTTP_200_OK,
 )
 async def export_boilerplate(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -904,6 +916,7 @@ async def export_boilerplate(
 )
 async def import_boilerplate(
     import_data: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """

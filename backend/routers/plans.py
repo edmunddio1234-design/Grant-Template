@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
 from database import get_db
+from dependencies import get_current_user
 from models import (
     GrantPlan,
     GrantPlanSection,
@@ -26,6 +27,7 @@ from models import (
     RiskLevelEnum,
     ActionTypeEnum,
     AuditLog,
+    User,
 )
 from schemas import (
     GrantPlanCreate,
@@ -278,6 +280,7 @@ async def list_plans(
 )
 async def get_plan(
     plan_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> GrantPlanRead:
     """
@@ -331,6 +334,7 @@ async def get_plan(
 )
 async def get_plan_sections(
     plan_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> List[GrantPlanSectionRead]:
     """
@@ -386,6 +390,7 @@ async def update_plan_section(
     plan_id: UUID,
     section_id: UUID,
     update_data: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> GrantPlanSectionRead:
     """
@@ -475,6 +480,7 @@ async def update_plan_section(
 async def update_plan_status(
     plan_id: UUID,
     status: GrantPlanStatusEnum,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> GrantPlanRead:
     """
@@ -543,6 +549,7 @@ async def update_plan_status(
 )
 async def get_compliance_checklist(
     plan_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> List[ComplianceChecklistItem]:
     """
@@ -724,6 +731,7 @@ async def export_plan(
 )
 async def delete_plan(
     plan_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

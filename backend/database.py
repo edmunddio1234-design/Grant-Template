@@ -159,10 +159,45 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         await session.close()
 
 
+async def seed_default_admin() -> None:
+    """Create a default admin user if none exists."""
+    from sqlalchemy import select as sa_select
+    from models import User, UserRoleEnum
+    from services.auth_service import hash_password
+
+    session = await db_manager.get_session()
+    try:
+        # Check if any admin user already exists
+        result = await session.execute(
+            sa_select(User).where(User.role == UserRoleEnum.ADMIN).limit(1)
+        )
+        existing_admin = result.scalar_one_or_none()
+
+        if not existing_admin:
+            admin = User(
+                email="admin@foamgrants.org",
+                name="FOAM Admin",
+                hashed_password=hash_password("ChangeMe123!"),
+                role=UserRoleEnum.ADMIN,
+                is_active=True,
+            )
+            session.add(admin)
+            await session.commit()
+            logger.info("Default admin user created: admin@foamgrants.org")
+        else:
+            logger.info(f"Admin user already exists: {existing_admin.email}")
+    except Exception as e:
+        await session.rollback()
+        logger.warning(f"Could not seed default admin (table may not support it yet): {e}")
+    finally:
+        await session.close()
+
+
 async def init_db() -> None:
     """Initialize database on application startup."""
     await db_manager.initialize()
     await db_manager.create_all_tables()
+    await seed_default_admin()
     logger.info("Database initialization complete")
 
 

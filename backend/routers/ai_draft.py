@@ -17,6 +17,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
+from dependencies import get_current_user
 from config import settings
 from models import (
     GrantPlan,
@@ -28,6 +29,7 @@ from models import (
     GapAnalysis,
     ActionTypeEnum,
     AuditLog,
+    User,
 )
 from schemas import (
     GrantPlanRead,
@@ -126,6 +128,7 @@ async def generate_section_outlines(
     plan_id: UUID,
     tone: str = Query("professional", regex="^(professional|conversational|technical)$"),
     focus_area: Optional[str] = Query(None, description="Specific focus area for outlines"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Generate AI-powered section outlines for all sections in a grant plan."""
@@ -243,6 +246,7 @@ async def generate_insert_block(
     context: str = Query(..., min_length=10, description="Context or prompt for insert block"),
     style: str = Query("formal", regex="^(formal|informal|mixed)$", description="Writing style"),
     length: str = Query("medium", regex="^(short|medium|long)$", description="Content length"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Generate an AI-powered insert block for a specific section."""
@@ -363,6 +367,7 @@ async def generate_comparison_statement(
     comparison_topic: str = Query(..., min_length=5, description="Topic to compare"),
     item1: str = Query(..., description="First item to compare"),
     item2: str = Query(..., description="Second item to compare"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Generate an AI-powered comparison statement for grant application content."""
@@ -456,6 +461,7 @@ async def generate_alignment_justification(
     requirement: str = Query(..., min_length=5, description="RFP requirement"),
     boilerplate_content: str = Query(..., min_length=5, description="Boilerplate content snippet"),
     gap_areas: Optional[List[str]] = Query(None, description="Known gap areas"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Generate an AI-powered alignment justification statement."""
@@ -557,6 +563,7 @@ async def generate_draft_framework(
     plan_id: UUID,
     include_justifications: bool = Query(True, description="Include alignment justifications"),
     include_outlines: bool = Query(True, description="Include section outlines"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Generate a complete AI-powered draft framework for a grant plan,
@@ -922,6 +929,7 @@ def _fill_placeholder_framework(section_framework, section, include_outlines, in
 async def get_saved_drafts(
     plan_id: UUID,
     block_type: Optional[str] = Query(None, regex="^(outline|insert|comparison|justification|framework)$"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> List[Dict[str, Any]]:
     """Retrieve saved AI draft blocks for a grant plan."""

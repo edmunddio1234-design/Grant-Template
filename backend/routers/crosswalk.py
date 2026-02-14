@@ -15,6 +15,7 @@ from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
+from dependencies import get_current_user
 from models import (
     CrosswalkMap,
     RFP,
@@ -24,6 +25,7 @@ from models import (
     RiskLevelEnum,
     ActionTypeEnum,
     AuditLog,
+    User,
 )
 from schemas import (
     CrosswalkMapRead,
@@ -77,6 +79,7 @@ async def log_audit(
 )
 async def generate_crosswalk(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -373,6 +376,7 @@ async def get_crosswalk(
 )
 async def get_alignment_matrix(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> List[AlignmentMatrixRow]:
     """
@@ -452,6 +456,7 @@ async def get_alignment_matrix(
 async def update_crosswalk_map(
     map_id: UUID,
     update_data: CrosswalkMapUpdate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> CrosswalkMapRead:
     """
@@ -526,6 +531,7 @@ async def update_crosswalk_map(
 )
 async def approve_crosswalk_map(
     map_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> CrosswalkMapRead:
     """
@@ -591,6 +597,7 @@ async def approve_crosswalk_map(
 )
 async def regenerate_crosswalk(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -739,6 +746,7 @@ async def export_crosswalk(
 )
 async def get_crosswalk_summary(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """

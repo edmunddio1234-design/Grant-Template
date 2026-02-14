@@ -16,7 +16,8 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
-from models import RFP, RFPRequirement, RFPStatusEnum, ActionTypeEnum, AuditLog
+from dependencies import get_current_user
+from models import RFP, RFPRequirement, RFPStatusEnum, ActionTypeEnum, AuditLog, User
 from schemas import (
     RFPCreate,
     RFPRead,
@@ -323,6 +324,7 @@ async def list_rfps(
 )
 async def get_rfp(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> RFPRead:
     """
@@ -377,6 +379,7 @@ async def get_rfp(
 )
 async def get_rfp_requirements(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> List[RFPRequirementRead]:
     """
@@ -433,6 +436,7 @@ async def update_requirement(
     rfp_id: UUID,
     req_id: UUID,
     req_data: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> RFPRequirementRead:
     """
@@ -522,6 +526,7 @@ async def update_requirement(
 )
 async def get_rfp_raw_text(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, str]:
     """
@@ -568,6 +573,7 @@ async def get_rfp_raw_text(
 )
 async def reparse_rfp(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> RFPRead:
     """
@@ -628,6 +634,7 @@ async def reparse_rfp(
 )
 async def archive_rfp(
     rfp_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

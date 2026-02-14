@@ -21,7 +21,7 @@ from database import db_manager, init_db, close_db
 import schemas
 
 # Import routers
-from routers import boilerplate, rfp, crosswalk, plans, dashboard, ai_draft
+from routers import auth, boilerplate, rfp, crosswalk, plans, dashboard, ai_draft
 
 # Configure logging
 logging.basicConfig(
@@ -113,6 +113,7 @@ def create_app() -> FastAPI:
         logger.warning(f"Could not mount uploads directory: {e}")
 
     # Include all module routers
+    app.include_router(auth.router)
     app.include_router(boilerplate.router)
     app.include_router(rfp.router)
     app.include_router(crosswalk.router)
