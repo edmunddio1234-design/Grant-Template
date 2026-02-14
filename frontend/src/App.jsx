@@ -11,6 +11,7 @@ import CrosswalkEngine from './pages/CrosswalkEngine'
 import GrantPlanGenerator from './pages/GrantPlanGenerator'
 import GapRiskDashboard from './pages/GapRiskDashboard'
 import AIDraftFramework from './pages/AIDraftFramework'
+import FundingResearch from './pages/FundingResearch'
 import useAppStore from './stores/appStore'
 import useAuthStore from './stores/authStore'
 
@@ -41,6 +42,7 @@ function App() {
                 <Route path="/plan" element={<GrantPlanGenerator />} />
                 <Route path="/gaps-risks" element={<GapRiskDashboard />} />
                 <Route path="/ai-framework" element={<AIDraftFramework />} />
+                <Route path="/funding-research" element={<FundingResearch />} />
               </Routes>
             </Layout>
           </ProtectedRoute>

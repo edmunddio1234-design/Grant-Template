@@ -8,7 +8,8 @@ import {
   FileText,
   Shield,
   Sparkles,
-  ArrowLeft
+  ArrowLeft,
+  SearchCheck
 } from 'lucide-react'
 import useAppStore from '../stores/appStore'
 import { apiClient } from '../api/client'
@@ -21,7 +22,8 @@ const modules = [
   { id: 'crosswalk', name: 'Crosswalk', path: '/crosswalk', icon: GitCompare },
   { id: 'plan', name: 'Grant Plans', path: '/plan', icon: FileText },
   { id: 'gaps-risks', name: 'Gaps & Risks', path: '/gaps-risks', icon: Shield },
-  { id: 'ai-framework', name: 'AI Drafts', path: '/ai-framework', icon: Sparkles }
+  { id: 'ai-framework', name: 'AI Drafts', path: '/ai-framework', icon: Sparkles },
+  { id: 'funding-research', name: 'Funding Research', path: '/funding-research', icon: SearchCheck }
 ]
 
 export default function Sidebar({ open, setOpen }) {

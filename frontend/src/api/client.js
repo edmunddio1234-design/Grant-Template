@@ -251,7 +251,28 @@ export const apiClient = {
     client.post(`/ai/draft-framework/${planId}`, null, { params, timeout: 120000 }),
 
   getSavedDrafts: (planId, blockType) =>
-    client.get(`/ai/drafts/${planId}`, { params: blockType ? { block_type: blockType } : {} })
+    client.get(`/ai/drafts/${planId}`, { params: blockType ? { block_type: blockType } : {} }),
+
+  // ============================================================================
+  // Funding Research (Module 8) - prefix: /api/funding-research
+  // ============================================================================
+  searchNonprofits: (params) =>
+    client.post('/funding-research/search', null, { params }),
+
+  getNonprofitDetail: (ein) =>
+    client.get(`/funding-research/org/${ein}`),
+
+  getNonprofitFilings: (ein) =>
+    client.get(`/funding-research/org/${ein}/filings`),
+
+  getNonprofitAwards: (ein, params = {}) =>
+    client.get(`/funding-research/org/${ein}/awards`, { params }),
+
+  getNonprofitPersonnel: (ein) =>
+    client.get(`/funding-research/org/${ein}/personnel`),
+
+  getNonprofitPeers: (ein) =>
+    client.get(`/funding-research/org/${ein}/peers`)
 }
 
 export default client

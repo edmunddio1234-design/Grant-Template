@@ -672,3 +672,138 @@ class AuditLog(Base):
         Index("idx_audit_entity_id", "entity_id"),
         Index("idx_audit_timestamp", "timestamp"),
     )
+
+
+# ============================================================================
+# NONPROFIT INTELLIGENCE MODELS (Funding Research)
+# ============================================================================
+
+class NonprofitOrg(Base):
+    """Nonprofit organizations from ProPublica API."""
+    __tablename__ = "nonprofit_orgs"
+
+    ein: Mapped[str] = mapped_column(String(20), primary_key=True)
+    name_legal: Mapped[str] = mapped_column(String(500), nullable=False)
+    name_normalized: Mapped[str] = mapped_column(String(500), nullable=False)
+    ntee_code: Mapped[Optional[str]] = mapped_column(String(20))
+    subsection_code: Mapped[Optional[str]] = mapped_column(String(10))
+    ruling_year: Mapped[Optional[int]] = mapped_column(Integer)
+    address_line1: Mapped[Optional[str]] = mapped_column(String(500))
+    city: Mapped[Optional[str]] = mapped_column(String(255))
+    state: Mapped[Optional[str]] = mapped_column(String(10))
+    zip: Mapped[Optional[str]] = mapped_column(String(20))
+    mission: Mapped[Optional[str]] = mapped_column(Text)
+    website: Mapped[Optional[str]] = mapped_column(String(500))
+    revenue_latest: Mapped[Optional[float]] = mapped_column(Float)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    filings: Mapped[list["NonprofitFiling990"]] = relationship(
+        back_populates="org", cascade="all, delete-orphan"
+    )
+    personnel: Mapped[list["NonprofitPersonnel"]] = relationship(
+        back_populates="org", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("idx_np_org_name_normalized", "name_normalized"),
+        Index("idx_np_org_state_city", "state", "city"),
+        Index("idx_np_org_ntee", "ntee_code"),
+        Index("idx_np_org_revenue", "revenue_latest"),
+    )
+
+
+class NonprofitFiling990(Base):
+    """990 tax filings from ProPublica."""
+    __tablename__ = "nonprofit_filings_990"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ein: Mapped[str] = mapped_column(
+        String(20), ForeignKey("nonprofit_orgs.ein", ondelete="CASCADE"), nullable=False
+    )
+    tax_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    form_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    total_revenue: Mapped[Optional[float]] = mapped_column(Float)
+    total_expenses: Mapped[Optional[float]] = mapped_column(Float)
+    total_assets: Mapped[Optional[float]] = mapped_column(Float)
+    total_liabilities: Mapped[Optional[float]] = mapped_column(Float)
+    pdf_url: Mapped[Optional[str]] = mapped_column(String(500))
+    xml_url: Mapped[Optional[str]] = mapped_column(String(500))
+    filed_date: Mapped[Optional[str]] = mapped_column(String(20))
+    source: Mapped[str] = mapped_column(String(50), nullable=False, default="ProPublica")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    org: Mapped["NonprofitOrg"] = relationship(back_populates="filings")
+
+    __table_args__ = (
+        UniqueConstraint("ein", "tax_year", "form_type", name="uq_np_filing"),
+        Index("idx_np_filing_ein_year", "ein", "tax_year"),
+    )
+
+
+class NonprofitPersonnel(Base):
+    """Officers and key personnel from 990 filings."""
+    __tablename__ = "nonprofit_personnel"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ein: Mapped[str] = mapped_column(
+        String(20), ForeignKey("nonprofit_orgs.ein", ondelete="CASCADE"), nullable=False
+    )
+    tax_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    title: Mapped[Optional[str]] = mapped_column(String(255))
+    compensation: Mapped[Optional[float]] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    org: Mapped["NonprofitOrg"] = relationship(back_populates="personnel")
+
+    __table_args__ = (
+        Index("idx_np_personnel_ein_year", "ein", "tax_year"),
+    )
+
+
+class NonprofitAward(Base):
+    """Federal awards from USAspending API."""
+    __tablename__ = "nonprofit_awards"
+
+    award_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    recipient_ein: Mapped[Optional[str]] = mapped_column(String(20))
+    recipient_name: Mapped[Optional[str]] = mapped_column(String(500))
+    amount: Mapped[Optional[float]] = mapped_column(Float)
+    action_date: Mapped[Optional[str]] = mapped_column(String(20))
+    awarding_agency: Mapped[Optional[str]] = mapped_column(String(500))
+    cfda_number: Mapped[Optional[str]] = mapped_column(String(50))
+    award_type: Mapped[Optional[str]] = mapped_column(String(100))
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    recipient_city: Mapped[Optional[str]] = mapped_column(String(255))
+    recipient_state: Mapped[Optional[str]] = mapped_column(String(10))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (
+        Index("idx_np_award_ein", "recipient_ein"),
+        Index("idx_np_award_agency", "awarding_agency"),
+        Index("idx_np_award_date", "action_date"),
+    )
+
+
+class NonprofitCache(Base):
+    """Cache for upstream API responses with TTL."""
+    __tablename__ = "nonprofit_cache"
+
+    cache_key: Mapped[str] = mapped_column(String(500), primary_key=True)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    source: Mapped[str] = mapped_column(String(50), nullable=False)
+    ttl_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    cached_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

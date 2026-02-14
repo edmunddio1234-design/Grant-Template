@@ -21,7 +21,7 @@ from database import db_manager, init_db, close_db
 import schemas
 
 # Import routers
-from routers import auth, boilerplate, rfp, crosswalk, plans, dashboard, ai_draft
+from routers import auth, boilerplate, rfp, crosswalk, plans, dashboard, ai_draft, funding_research
 
 # Configure logging
 logging.basicConfig(
@@ -120,6 +120,7 @@ def create_app() -> FastAPI:
     app.include_router(plans.router)
     app.include_router(dashboard.router)
     app.include_router(ai_draft.router)
+    app.include_router(funding_research.router)
 
     return app
 
