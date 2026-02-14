@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { TrendingUp, FileText, Zap, Target, Upload, Plus } from 'lucide-react'
 import StatusIndicator from '../components/common/StatusIndicator'
 import RiskBadge from '../components/common/RiskBadge'
+import GrantFunderChart from '../components/GrantFunderChart'
 import useAppStore from '../stores/appStore'
 import { apiClient } from '../api/client'
 
@@ -81,11 +81,8 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-8">
-      {!loading && !apiConnected && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-          Backend API is waking up or unavailable — showing demo data. The Render free tier may take 30-60s to spin up.
-        </div>
-      )}
+      {/* Grant Funder Analytics — animated background chart */}
+      <GrantFunderChart />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -121,35 +118,16 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="subsection-title">Risk Distribution</h3>
-            <p className="text-sm text-gray-600 mt-1">Across all active RFPs</p>
-          </div>
-          <div className="p-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie data={dashboardData.riskDistribution} cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}`} outerRadius={100} fill="#8884d8" dataKey="value">
-                  {dashboardData.riskDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Recent Activity */}
+      <div className="card">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="subsection-title">Recent Activity</h3>
+          <p className="text-sm text-gray-600 mt-1">Last 4 actions</p>
         </div>
-
-        <div className="card">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="subsection-title">Recent Activity</h3>
-            <p className="text-sm text-gray-600 mt-1">Last 4 actions</p>
-          </div>
-          <div className="p-6 space-y-4">
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {dashboardData.activityFeed.map((activity) => (
-              <div key={activity.id} className="flex gap-4 pb-4 border-b border-gray-100 last:border-b-0 last:pb-0">
+              <div key={activity.id} className="flex gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                 <div className="w-2 h-2 bg-foam-primary rounded-full mt-2 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 text-sm">{activity.action}</p>
