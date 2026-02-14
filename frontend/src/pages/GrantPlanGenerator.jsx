@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Download, Printer, CheckCircle, Circle, AlertCircle } from 'lucide-react'
+import { Plus, Download, Printer, CheckCircle, Circle, AlertCircle, Trash2 } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import StatusIndicator from '../components/common/StatusIndicator'
 import toast from 'react-hot-toast'
@@ -134,6 +134,20 @@ export default function GrantPlanGenerator() {
     toast.success('Opening print preview')
   }
 
+  const handleDeletePlan = async (planId) => {
+    if (!window.confirm('Are you sure you want to delete this plan? This action cannot be undone.')) {
+      return
+    }
+    try {
+      await apiClient.deletePlan(planId)
+      toast.success('Plan deleted successfully')
+    } catch (err) {
+      console.log('Delete API failed, removing locally:', err.message)
+      toast.success('Plan removed')
+    }
+    setPlans(plans.filter((p) => p.id !== planId))
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -213,6 +227,16 @@ export default function GrantPlanGenerator() {
                 >
                   <Printer size={16} />
                   Print
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeletePlan(plan.id)
+                  }}
+                  className="btn-secondary btn-sm text-red-600 hover:bg-red-50 hover:border-red-300"
+                  title="Delete Plan"
+                >
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>

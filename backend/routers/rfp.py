@@ -27,8 +27,7 @@ from schemas import (
 )
 from config import settings
 
-# Import services (adjust based on actual service implementations)
-# from services import RFPParserService
+from services import RFPParserService
 
 logger = logging.getLogger(__name__)
 
@@ -180,9 +179,49 @@ async def upload_rfp(
         db.add(rfp)
         await db.flush()
 
-        # TODO: Call RFPParserService here to parse document and extract requirements
-        # For now, we'll create a placeholder status
         rfp.status = RFPStatusEnum.PARSING
+        await db.commit()
+        await db.refresh(rfp)
+
+        # Parse the RFP document using RFPParserService
+        try:
+            parser = RFPParserService()
+            parsed = await parser.parse_document(file_content, ext.lstrip("."), file.filename)
+
+            # Update RFP with parsed data
+            rfp.raw_text = parsed.raw_text[:50000] if parsed.raw_text else None
+            if parsed.title and parsed.title != file.filename:
+                rfp.title = title or parsed.title
+            if parsed.funder_name and parsed.funder_name != "Unknown" and funder_name is None:
+                rfp.funder_name = parsed.funder_name
+            if parsed.deadline and not deadline:
+                try:
+                    rfp.deadline = datetime.fromisoformat(parsed.deadline)
+                except (ValueError, TypeError):
+                    pass
+            if parsed.eligibility:
+                rfp.eligibility_notes = "; ".join(parsed.eligibility)
+            rfp.parsed_at = datetime.utcnow()
+
+            # Create RFPRequirement records from parsed sections
+            for i, section in enumerate(parsed.sections):
+                req = RFPRequirement(
+                    rfp_id=rfp.id,
+                    section_name=section.name,
+                    description=section.content[:2000] if section.content else section.name,
+                    word_limit=section.word_limit,
+                    scoring_weight=section.scoring_weight,
+                    formatting_notes=section.formatting_notes,
+                    required_attachments=[],
+                    section_order=i,
+                )
+                db.add(req)
+
+            rfp.status = RFPStatusEnum.PARSED
+            logger.info(f"Successfully parsed RFP {rfp.id}: {len(parsed.sections)} sections extracted")
+        except Exception as parse_err:
+            logger.warning(f"RFP parsing failed for {rfp.id}, marking as uploaded: {parse_err}")
+            rfp.status = RFPStatusEnum.UPLOADED
 
         await db.commit()
         await db.refresh(rfp)
@@ -193,7 +232,7 @@ async def upload_rfp(
             ActionTypeEnum.CREATE,
             "RFP",
             str(rfp.id),
-            new_value={"title": rfp.title, "funder_name": rfp.funder_name},
+            new_value={"title": rfp.title, "funder_name": rfp.funder_name, "status": rfp.status.value},
         )
         await db.commit()
 
