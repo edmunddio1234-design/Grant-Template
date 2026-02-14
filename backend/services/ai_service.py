@@ -443,6 +443,7 @@ Provide only the opening paragraph, ready for inclusion in a grant draft."""
             AIServiceError: If API call fails after retries
             RateLimitError: If rate limited
         """
+        last_error = None
         for attempt in range(self.max_retries):
             try:
                 if self.provider == AIProvider.OPENAI:
@@ -466,7 +467,14 @@ Provide only the opening paragraph, ready for inclusion in a grant draft."""
                     return response.content[0].text
 
             except Exception as e:
+                last_error = e
                 error_str = str(e).lower()
+                logger.error(f"AI API attempt {attempt + 1}/{self.max_retries} failed: {str(e)}")
+
+                # Authentication / key errors — don't retry
+                if any(kw in error_str for kw in ["auth", "invalid", "key", "permission", "denied", "401", "403"]):
+                    logger.error(f"Authentication error — API key may be invalid: {str(e)}")
+                    raise AIServiceError(f"API key error: {str(e)}")
 
                 # Check for rate limit
                 if "rate" in error_str or "quota" in error_str:
@@ -487,7 +495,7 @@ Provide only the opening paragraph, ready for inclusion in a grant draft."""
                 logger.error(f"Non-retryable API error: {str(e)}")
                 raise AIServiceError(f"API error: {str(e)}")
 
-        raise AIServiceError(f"Failed after {self.max_retries} retries")
+        raise AIServiceError(f"Failed after {self.max_retries} retries: {str(last_error)}")
 
     def _call_api_sync(self, messages: List[Dict], max_tokens: int = 2000) -> str:
         """
